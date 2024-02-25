@@ -1,0 +1,78 @@
+nameOverride: ""
+
+topLevelDomain: example.com
+
+ingress:
+  create: true
+  publiclyAvailable: false
+  issuer:
+    name: letsencrypt-staging-issuer
+
+replicaCount: 1
+progressDeadlineSeconds: 600
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+podAnnotations: {}
+podSecurityContext: {}
+
+
+container:
+  image: ""
+  # The port to expose from the container
+  ports:
+    - name: http
+      containerPort: 8080
+      protocol: TCP
+  volumeMounts:
+    - mountPath: /config
+      name: config
+  env:
+    - name: PUID
+      value: "5000"
+    - name: PGID
+      value: "5000"
+    - name: TZ
+      value: "Europe/Amsterdam"
+
+volumes:
+  - name: config
+    persistentVolumeClaim:
+      claimName: config
+
+persistentVolumeClaims:
+  - name: config
+    storageClassName: truenas-iscsi-csi-retained
+    reclaimPolicy: Delete
+    size: 1Gi
+
+service:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
