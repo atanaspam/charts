@@ -1,5 +1,7 @@
 nameOverride: ""
 
+topLevelDomain: example.com
+
 ingress:
   create: true
   publiclyAvailable: false
