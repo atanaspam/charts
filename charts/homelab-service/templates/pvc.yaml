@@ -1,0 +1,17 @@
+{{- range $value := .Values.persistentVolumeClaims }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ $value.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "service.labels" $ | nindent 4 }}
+spec:
+  storageClassName: {{ $value.storageClassName }}
+  persistentVolumeReclaimPolicy: {{ $value.reclaimPolicy }}
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ $value.size }}
+{{- end }}
