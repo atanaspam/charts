@@ -15,6 +15,19 @@ spec:
   routes:
   - kind: Rule
     match: Host(`{{ include "service.name" . }}.k3s.internal.{{ .Values.topLevelDomain }}`){{ if .Values.ingress.publiclyAvailable }} || Host(`{{ include "service.name" . }}.{{ .Values.topLevelDomain }}`) {{ end }}
+    {{- if or .Values.ingress.customMiddlewares.names .Values.ingress.customMiddlewares.definitions }}
+    middlewares:
+      {{- if .Values.ingress.customMiddlewares.definitions }}
+        {{- range .Values.ingress.customMiddlewares.definitions }}
+      - name: {{ .metadata.name}}
+        {{- end }}
+      {{- end }}
+      {{- if .Values.ingress.customMiddlewares.names }}
+        {{- range .Values.ingress.customMiddlewares.names }}
+      - name: {{ . }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
     services:
     - kind: Service
       name: {{ include "service.name" . }}
@@ -43,4 +56,8 @@ spec:
     {{- if .Values.ingress.publiclyAvailable -}}
       {{- printf "- %s.%s" (include "service.name" .) .Values.topLevelDomain | nindent 4 -}}
     {{ end }}
+{{- end }}
+{{- range .Values.ingress.customMiddlewares.definitions }}
+---
+{{ include "service.render" (dict "value" . "context" $) }}
 {{- end }}
