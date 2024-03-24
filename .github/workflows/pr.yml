@@ -41,5 +41,7 @@ jobs:
           new_chart_version=$(yq .version charts/homelab-service/Chart.yaml)
           echo $new_chart_version
           # if ((002 > 001)); then echo "a is more than b"; fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
