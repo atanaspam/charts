@@ -37,9 +37,9 @@ jobs:
         run:
           echo "Checking version increment"
           current_chart_version=$(gh release list --limit 1 --json name --jq '.[0].name | split ("-")[2]')
-          current_version=${current_chart_version//.}
+          current_version=${current_chart_version//./}
           new_chart_version=$(yq .version charts/homelab-service/Chart.yaml)
-          new_version=${new_chart_version//.}
+          new_version=${new_chart_version//./}
           test $new_version -gt $current_version
           # if [ $? -eq 1 ]; then
           #   echo "version is not correctly incremented"
