@@ -7,7 +7,10 @@ ingress:
   publiclyAvailable: false
   issuer:
     name: letsencrypt-staging-issuer
-
+  customMiddlewares:
+    names: []
+    # - middleware1
+    definitions: []
 replicaCount: 1
 progressDeadlineSeconds: 600
 
