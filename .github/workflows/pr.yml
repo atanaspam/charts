@@ -40,7 +40,12 @@ jobs:
           current_version=${current_chart_version//.}
           new_chart_version=$(yq .version charts/homelab-service/Chart.yaml)
           new_version=${new_chart_version//.}
-          if test $new_version -gt $current_version; then; echo "proceed"; else; echo "fail"; exit 1; fi
+          if test $new_version -gt $current_version; then
+            echo "proceed"
+          else
+            echo "fail"
+            exit 1
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
