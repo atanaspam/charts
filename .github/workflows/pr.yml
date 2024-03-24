@@ -37,13 +37,10 @@ jobs:
         run:
           echo "Checking version increment"
           current_chart_version=$(gh release list --limit 1 --json name --jq '.[0].name | split ("-")[2]')
-          echo $current_chart_version
-          echo "${current_chart_version//.}"
           current_version=${current_chart_version//.}
           new_chart_version=$(yq .version charts/homelab-service/Chart.yaml)
-          echo $new_chart_version
           new_version=${new_chart_version//.}
-          if test $new_version -gt $current_version; then echo "proceed"; else; echo "fail"; exit 1; fi
+          if test $new_version -gt $current_version; then; echo "proceed"; else; echo "fail"; exit 1; fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
