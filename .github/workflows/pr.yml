@@ -41,10 +41,10 @@ jobs:
           new_chart_version=$(yq .version charts/homelab-service/Chart.yaml)
           new_version=${new_chart_version//.}
           test $new_version -gt $current_version
-          if [ $? -eq 1 ]; then
-            echo "version is not correctly incremented"
-            exit 1
-          fi
+          # if [ $? -eq 1 ]; then
+          #   echo "version is not correctly incremented"
+          #   exit 1
+          # fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
