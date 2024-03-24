@@ -36,7 +36,7 @@ jobs:
       - name: Check version increment
         run:
           echo "Checking version increment"
-          current_chart_version=$(gh release list --limit 1 --json --jq '.')
+          current_chart_version=$(gh release list --limit 1 --json --jq '.[]')
           echo $current_chart_version
           new_chart_version=$(yq .version charts/homelab-service/Chart.yaml)
           echo $new_chart_version
