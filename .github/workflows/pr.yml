@@ -2,8 +2,8 @@ name: Validate Charts
 
 on:
   pull_request:
-      branches:
-        - 'main'
+    branches:
+      - 'main'
 
 
 jobs:
@@ -34,17 +34,29 @@ jobs:
           args: "-ignore-missing-schemas rendered.yml"
 
       - name: Check version increment
-        run:
-          echo "Checking version increment"
-          current_chart_version=$(gh release list --limit 1 --json name --jq '.[0].name | split ("-")[2]')
-          current_version=${current_chart_version//./}
-          new_chart_version=$(yq .version charts/homelab-service/Chart.yaml)
-          new_version=${new_chart_version//./}
-          test $new_version -gt $current_version
-          # if [ $? -eq 1 ]; then
-          #   echo "version is not correctly incremented"
-          #   exit 1
-          # fi
+        run: |
+          chart_path=${1:?"No chart path provided to [Version Check]"}
+          target_branch=${2:?"No target branch provided to [Version Check]"}
+          "origin/${{ github.base_ref }}"
+          new=$(git diff "origin/${{ github.base_ref }}" -- ${{ github.workspace }}/charts/homelab-service/Chart.yaml | sed -nr 's/^\+version: (.*)$/\1/p')
+          old=$(git diff "origin/${{ github.base_ref }}" -- ${{ github.workspace }}/charts/homelab-service/Chart.yaml | sed -nr 's/^\-version: (.*)$/\1/p')
+
+          if [[ -z "$new" ]]; then
+              echo -e "\t❌ Chart version: Not changed"
+              return -1
+          fi
+
+          if [[ -n "$new" ]]; then
+              echo -e "\t Old Chart Version: $old"
+              echo -e "\t New Chart Version: $new"
+
+              if [[ $(echo "$new\n$old" | sort -V -r | head -n1) != "$old" ]]; then
+                  echo -e "\t✅ Chart version: Bumped"
+              else
+                  echo -e "\t❌ Chart version: Not bumped or downgraded"
+                  curr_result=1
+              fi
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

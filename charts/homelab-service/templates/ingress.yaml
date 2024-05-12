@@ -1,11 +1,12 @@
 {{- if .Values.ingress.create }}
+
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: {{ include "service.name" . }}
   namespace: {{ .Release.Namespace }}
   annotations:
-    external-dns.alpha.kubernetes.io/target: k3s.internal.{{ .Values.topLevelDomain }}
+    external-dns.alpha.kubernetes.io/target: {{ $ }}
     kubernetes.io/ingress.class: traefik
   labels:
     {{- include "service.labels" . | nindent 4 }}
@@ -13,24 +14,18 @@ spec:
   entryPoints:
     - websecure
   routes:
+    {{- range .Values.ingress.routes }}
   - kind: Rule
-    match: Host(`{{ include "service.name" . }}.k3s.internal.{{ .Values.topLevelDomain }}`){{ if .Values.ingress.publiclyAvailable }} || Host(`{{ include "service.name" . }}.{{ .Values.topLevelDomain }}`) {{ end }}
-    {{- if or .Values.ingress.customMiddlewares.names .Values.ingress.customMiddlewares.definitions }}
+    match: {{ .match }}
+    {{ if .middlewares }}
     middlewares:
-      {{- if .Values.ingress.customMiddlewares.definitions }}
-        {{- range .Values.ingress.customMiddlewares.definitions }}
-      - name: {{ .metadata.name}}
-        {{- end }}
-      {{- end }}
-      {{- if .Values.ingress.customMiddlewares.names }}
-        {{- range .Values.ingress.customMiddlewares.names }}
-      - name: {{ . }}
-        {{- end }}
+      {{ range .middlewares }}
+      - name: {{ .name }}
       {{- end }}
     {{- end }}
     services:
     - kind: Service
-      name: {{ include "service.name" . }}
+      name: asd #{{ include "service.name" . }}
       namespace: {{ .Release.Namespace }}
       passHostHeader: true
       {{- range $port := .Values.service.ports }}
@@ -38,6 +33,7 @@ spec:
       port: {{ $port.port }}
         {{- end }}
       {{- end }}
+    {{- end }}
   tls:
     secretName: {{ include "service.name" . }}-cert
 ---
@@ -52,12 +48,16 @@ spec:
     name: {{ .Values.ingress.issuer.name }}
     kind: ClusterIssuer
   dnsNames:
-    - {{ include "service.name" . }}.k3s.internal.{{ .Values.topLevelDomain }}
-    {{- if .Values.ingress.publiclyAvailable -}}
-      {{- printf "- %s.%s" (include "service.name" .) .Values.topLevelDomain | nindent 4 -}}
-    {{ end }}
+  - {{  printf "%s.%s" (include "service.name" .) (include "service.url.fqdn") }}
+  {{- if .Values.ingress.internalEndpoint -}}
+  - {{ .Values.ingress.route.match.internalEndpoint }}
+  {{ end }}
+  {{- if .Values.ingress.publicEndpoint -}}
+  - {{ .Values.ingress.route.match.publicEndpoint }}
+  {{ end }}
 {{- end }}
-{{- range .Values.ingress.customMiddlewares.definitions }}
----
-{{ include "service.render" (dict "value" . "context" $) }}
-{{- end }}
+# Custom middlewares should be defined in the Traefik helm chart not in the service chart
+# {{- range .Values.ingress.customMiddlewares.definitions }}
+# ---
+# {{ include "service.render" (dict "value" . "context" $) }}
+# {{- end }}

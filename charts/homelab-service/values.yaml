@@ -1,16 +1,26 @@
 nameOverride: ""
 
-topLevelDomain: example.com
+topLevelDomain: ""
+subDomain: ""
+clusterName: ""
 
 ingress:
   create: true
   publiclyAvailable: false
   issuer:
     name: letsencrypt-staging-issuer
-  customMiddlewares:
-    names: []
-    # - middleware1
-    definitions: []
+  # customMiddlewares:
+  #   names: []
+  #   # - middleware1
+  #   definitions: []
+  routes:
+  - match: "Host()"
+    middlewares:
+    - name: ""
+    # whoami.k3s0.internal.gsw130.net
+    # whoami.k3s1.internal.gsw130.net
+    # whoami.internal.gsw130.net
+    # whoami.gsw130.net
 replicaCount: 1
 progressDeadlineSeconds: 600
 
@@ -79,5 +89,8 @@ resources:
   requests:
     cpu: 100m
     memory: 128Mi
+
+externalDNS:
+  target: ""
 
 extraObjects: []
