@@ -17,10 +17,6 @@ ingress:
   - match: "Host()"
     middlewares:
     - name: ""
-    # whoami.k3s0.internal.gsw130.net
-    # whoami.k3s1.internal.gsw130.net
-    # whoami.internal.gsw130.net
-    # whoami.gsw130.net
 replicaCount: 1
 progressDeadlineSeconds: 600
 

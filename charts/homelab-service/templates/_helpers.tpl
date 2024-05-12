@@ -8,7 +8,6 @@ Expand the name of the chart.
 asds
 {{- end }}
 
-
 {{/*
 Create chart name and version as used by the chart label.
 */}}
@@ -16,6 +15,28 @@ Create chart name and version as used by the chart label.
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
+
+{{/*
+Create the URL section of the FQDN for the subDomain
+*/}}
+{{- define "service.url.subDomain" -}}
+{{- printf "%s" ternary .Values.subDomain "" empty .Values.subDomain }}
+{{- end }}
+
+{{/*
+Create the URL section of the FQDN for the clusterName
+*/}}
+{{- define "service.url.clusterName" -}}
+{{- printf "%s" ternary .Values.clusterName "" empty .Values.subDomain }}
+{{- end }}
+
+
+{{/*
+Create the FQDN of the cluster the chart is running in
+*/}}
+{{- define "service.url.fqdn" -}}
+{{- printf "%s%s.%s" .Values.clusterName include "service.url.subDomain" .Values.topLevelDomain }}
+{{- end }}
 
 {{/*
 Common labels
