@@ -1,16 +1,22 @@
 nameOverride: ""
 
 topLevelDomain: example.com
+# subDomain: ""
+clusterName: k3s
 
 ingress:
   create: true
-  publiclyAvailable: false
   issuer:
     name: letsencrypt-staging-issuer
-  customMiddlewares:
-    names: []
-    # - middleware1
-    definitions: []
+  routes:
+    - match: "{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}"
+      customMiddlewares:
+        - name: https-redirectscheme
+          namespace: traefik
+
+customMiddleware:
+  definitions: []
+
 replicaCount: 1
 progressDeadlineSeconds: 600
 

@@ -5,7 +5,7 @@ metadata:
   name: {{ include "service.name" . }}
   namespace: {{ .Release.Namespace }}
   annotations:
-    external-dns.alpha.kubernetes.io/target: k3s.internal.{{ .Values.topLevelDomain }}
+    external-dns.alpha.kubernetes.io/target: {{ include "cluster.fqdn" . }}
     kubernetes.io/ingress.class: traefik
   labels:
     {{- include "service.labels" . | nindent 4 }}
@@ -13,31 +13,27 @@ spec:
   entryPoints:
     - websecure
   routes:
-  - kind: Rule
-    match: Host(`{{ include "service.name" . }}.k3s.internal.{{ .Values.topLevelDomain }}`){{ if .Values.ingress.publiclyAvailable }} || Host(`{{ include "service.name" . }}.{{ .Values.topLevelDomain }}`) {{ end }}
-    {{- if or .Values.ingress.customMiddlewares.names .Values.ingress.customMiddlewares.definitions }}
-    middlewares:
-      {{- if .Values.ingress.customMiddlewares.definitions }}
-        {{- range .Values.ingress.customMiddlewares.definitions }}
-      - name: {{ .metadata.name}}
+    {{- range .Values.ingress.routes }}
+    - kind: Rule
+      match: {{  printf "Host(`%s`)" (tpl .match $) }}
+      {{- if .customMiddlewares }}
+      middlewares:
+        {{- range .customMiddlewares }}
+      - name: {{ .name }}
+        namespace: {{ .namespace }}
         {{- end }}
       {{- end }}
-      {{- if .Values.ingress.customMiddlewares.names }}
-        {{- range .Values.ingress.customMiddlewares.names }}
-      - name: {{ . }}
+      services:
+      - kind: Service
+        name: {{ include "service.name" $ }}
+        namespace: {{ $.Release.Namespace }}
+        passHostHeader: true
+        {{- range $port := $.Values.service.ports }}
+          {{- if eq $port.name "http" }}
+        port: {{ $port.port }}
+          {{- end }}
         {{- end }}
-      {{- end }}
     {{- end }}
-    services:
-    - kind: Service
-      name: {{ include "service.name" . }}
-      namespace: {{ .Release.Namespace }}
-      passHostHeader: true
-      {{- range $port := .Values.service.ports }}
-        {{- if eq $port.name "http" }}
-      port: {{ $port.port }}
-        {{- end }}
-      {{- end }}
   tls:
     secretName: {{ include "service.name" . }}-cert
 ---
@@ -52,12 +48,11 @@ spec:
     name: {{ .Values.ingress.issuer.name }}
     kind: ClusterIssuer
   dnsNames:
-    - {{ include "service.name" . }}.k3s.internal.{{ .Values.topLevelDomain }}
-    {{- if .Values.ingress.publiclyAvailable -}}
-      {{- printf "- %s.%s" (include "service.name" .) .Values.topLevelDomain | nindent 4 -}}
-    {{ end }}
-{{- end }}
-{{- range .Values.ingress.customMiddlewares.definitions }}
+  {{- range .Values.ingress.routes }}
+  - {{ tpl .match $ }}
+  {{- end }}
+# {{- end }}
+{{- range .Values.customMiddleware.definitions }}
 ---
 {{ include "service.render" (dict "value" . "context" $) }}
 {{- end }}
