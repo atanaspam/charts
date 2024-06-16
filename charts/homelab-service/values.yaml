@@ -34,6 +34,8 @@ podSecurityContext: {}
 
 container:
   image: ""
+  command: []
+  args: []
   # The port to expose from the container
   ports:
     - name: http
