@@ -8,7 +8,7 @@ metadata:
     {{- include "service.labels" $ | nindent 4 }}
 spec:
   storageClassName: {{ $value.storageClassName }}
-  persistentVolumeReclaimPolicy: {{ $value.reclaimPolicy }}
+  # persistentVolumeReclaimPolicy: {{ $value.reclaimPolicy }}
   accessModes:
     - ReadWriteOnce
   resources:

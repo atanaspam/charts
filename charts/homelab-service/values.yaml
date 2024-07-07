@@ -31,7 +31,7 @@ securityContext: {}
 podAnnotations: {}
 podSecurityContext: {}
 
-
+initContainers: []
 container:
   image: ""
   command: []
