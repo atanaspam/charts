@@ -51,6 +51,7 @@ spec:
   {{- range .Values.ingress.routes }}
   - {{ tpl .match $ }}
   {{- end }}
+{{- end }}
 {{- range .Values.customMiddleware.definitions }}
 ---
 {{ include "service.render" (dict "value" . "context" $) }}
