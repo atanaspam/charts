@@ -6,6 +6,10 @@ metadata:
   namespace: {{ $.Release.Namespace }}
   labels:
     {{- include "service.labels" $ | nindent 4 }}
+  {{- with $value.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   storageClassName: {{ $value.storageClassName }}
   # persistentVolumeReclaimPolicy: {{ $value.reclaimPolicy }}

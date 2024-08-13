@@ -62,6 +62,7 @@ persistentVolumeClaims:
     storageClassName: truenas-iscsi-csi-retained
     reclaimPolicy: Delete
     size: 1Gi
+    annotations: {}
 
 service:
   type: ClusterIP
