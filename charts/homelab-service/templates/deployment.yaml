@@ -35,10 +35,6 @@ spec:
       #   allowPrivilegeEscalation:  {{ .Values.securityContext.allowPrivilegeEscalation | default "false" }}
         # capabilities:
         #   add: ["NET_ADMIN", "SYS_TIME"]
-      {{- with .Values.initContainers }}
-      initContainers:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
 
       containers:
         - name: {{ include "service.name" . }}
@@ -73,6 +69,11 @@ spec:
           args:
             {{- toYaml .Values.container.args | nindent 12 }}
           {{- end }}
+      {{- with .Values.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
       {{- with .Values.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}
