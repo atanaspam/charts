@@ -35,7 +35,6 @@ spec:
       #   allowPrivilegeEscalation:  {{ .Values.securityContext.allowPrivilegeEscalation | default "false" }}
         # capabilities:
         #   add: ["NET_ADMIN", "SYS_TIME"]
-
       containers:
         - name: {{ include "service.name" . }}
           image: "{{ .Values.container.image | default (printf "lscr.io/linuxserver/%s:latest" (include "service.name" .)) }}"
@@ -73,8 +72,5 @@ spec:
       initContainers:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      initContainers:
-      {{- with .Values.volumes }}
       volumes:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- tpl (.Values.volumes | toYaml) . | nindent 8 }}
