@@ -68,7 +68,8 @@ spec:
     name: {{ .Values.ingress.issuer.name }}
     kind: ClusterIssuer
   dnsNames:
-  {{- range .Values.ingress.routes }}
+  - {{  printf "%s.%s" (include "service.name" .) (include "cluster.fqdn" .) }}
+  {{- range .Values.ingress.extraRoutes }}
   - {{ tpl .match $ }}
   {{- end }}
 {{- end }}
