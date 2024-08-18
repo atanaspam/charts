@@ -6,13 +6,14 @@ clusterName: k3s
 
 ingress:
   create: true
+  enableKeycloakAuth: true
   issuer:
     name: letsencrypt-staging-issuer
-  routes:
-    - match: "{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}"
-      customMiddlewares:
-        - name: https-redirectscheme
-          namespace: traefik
+  extraRoutes: []
+  #   - match: "{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}"
+  #     customMiddlewares:
+  #       - name: https-redirectscheme
+  #         namespace: traefik
 
 customMiddleware:
   definitions: []
