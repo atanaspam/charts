@@ -13,7 +13,27 @@ spec:
   entryPoints:
     - websecure
   routes:
-    {{- range .Values.ingress.routes }}
+    - kind: Rule
+      match: {{  printf "Host(`%s.%s`)" (include "service.name" .) (include "cluster.fqdn" .) }}
+      middlewares:
+      - name: https-redirectscheme
+        namespace: traefik
+      {{- if .Values.ingress.enableKeycloakAuth }}
+      - name: keycloak-openid
+        namespace: traefik
+      {{- end }}
+      services:
+      - kind: Service
+        name: {{ include "service.name" $ }}
+        namespace: {{ $.Release.Namespace }}
+        passHostHeader: true
+        {{- range $port := $.Values.service.ports }}
+          {{- if eq $port.name "http" }}
+        port: {{ $port.port }}
+          {{- end }}
+        {{- end }}
+
+    {{- range .Values.ingress.extraRoutes }}
     - kind: Rule
       match: {{  printf "Host(`%s`)" (tpl .match $) }}
       {{- if .customMiddlewares }}
