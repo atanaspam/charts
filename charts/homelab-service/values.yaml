@@ -90,4 +90,14 @@ resources:
     cpu: 100m
     memory: 128Mi
 
+monitoring:
+  serviceMonitor:
+    create: false
+    interval: 3m
+    scrapeTimeout: 15s
+  exportarr:
+    version: latest
+    apiKey: ""
+    create: false
+
 extraObjects: []
