@@ -37,7 +37,7 @@ container:
   image: ""
   command: []
   args: []
-  # The port to expose from the container
+  # runtimeClassName: nvidia
   ports:
     - name: http
       containerPort: 8080
