@@ -33,6 +33,7 @@ Create the FQDN of the service
 Common labels
 */}}
 {{- define "service.labels" -}}
+app: {{ include "service.name" . }}
 helm.sh/chart: {{ include "service.chart" . }}
 {{ include "service.selectorLabels" . }}
 {{- if .Chart.AppVersion }}

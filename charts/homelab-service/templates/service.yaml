@@ -13,3 +13,24 @@ spec:
   ports:
     {{- toYaml . | nindent 4 }}
   {{- end }}
+---
+{{- if and .Values.monitoring.serviceMonitor.create (not .Values.monitoring.exportarr.create) }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "service.name" . }}-exporter
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ include "service.name" . }}-exporter
+    app.kubernetes.io/instance: {{ include "service.name" . }}-exporter
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "service.name" . }}-exporter
+      app.kubernetes.io/instance: {{ include "service.name" . }}-exporter
+  endpoints:
+    - port: monitoring
+      interval: {{ .Values.monitoring.serviceMonitor.interval }}
+      scrapeTimeout: {{ .Values.monitoring.serviceMonitor.scrapeTimeout }}
+      path: /metrics
+{{- end }}
