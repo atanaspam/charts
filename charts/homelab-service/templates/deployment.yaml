@@ -14,6 +14,9 @@ spec:
   revisionHistoryLimit: 2
   strategy:
     type: Recreate
+  {{  with .Values.container.runtimeClassName }}
+  runtimeClassName: {{ . }}
+  {{- end }}
   template:
     metadata:
       labels:
