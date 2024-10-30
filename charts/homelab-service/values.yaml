@@ -6,7 +6,7 @@ clusterName: k3s
 
 ingress:
   create: true
-  enableKeycloakAuth: true
+  enableKeycloakAuth: false
   issuer:
     name: letsencrypt-staging-issuer
   extraRoutes: []
