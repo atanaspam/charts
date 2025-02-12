@@ -18,7 +18,9 @@ spec:
       middlewares:
         - name: https-redirectscheme
           namespace: traefik
+        {{- if .Values.ingress.defaultRoute.extraMiddlewares }}
         {{- tpl (.Values.ingress.defaultRoute.extraMiddlewares | toYaml) . | nindent 8 }}
+        {{- end }}
       services:
       - kind: Service
         name: {{ include "service.name" $ }}
