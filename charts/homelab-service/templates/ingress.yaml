@@ -16,12 +16,9 @@ spec:
     - kind: Rule
       match: {{  printf "Host(`%s.%s`)" (include "service.name" .) (include "cluster.fqdn" .) }}
       middlewares:
-      - name: https-redirectscheme
-        namespace: traefik
-      {{- if .Values.ingress.enableKeycloakAuth }}
-      - name: keycloak-openid
-        namespace: traefik
-      {{- end }}
+        - name: https-redirectscheme
+          namespace: traefik
+        {{- tpl (.Values.ingress.defaultRoute.extraMiddlewares | toYaml) . | nindent 8 }}
       services:
       - kind: Service
         name: {{ include "service.name" $ }}
@@ -32,7 +29,6 @@ spec:
         port: {{ $port.port }}
           {{- end }}
         {{- end }}
-
     {{- range .Values.ingress.extraRoutes }}
     - kind: Rule
       match: {{  printf "Host(`%s`)" (tpl .match $) }}
@@ -67,6 +63,8 @@ spec:
   issuerRef:
     name: {{ .Values.ingress.issuer.name }}
     kind: ClusterIssuer
+  additionalOutputFormats:
+  - type: CombinedPEM
   dnsNames:
   - {{  printf "%s.%s" (include "service.name" .) (include "cluster.fqdn" .) }}
   {{- range .Values.ingress.extraRoutes }}
