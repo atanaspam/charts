@@ -1,0 +1,14 @@
+{{- range $value := .Values.databases }}
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: "{{- tpl ($value.name) $ }}" # Notice we are using $ for the global context
+  # name: { include "service.name" (dict "Release" $.Release "Values" $.Values) }
+  namespace: {{ $value.targetClusterNamespace }}
+spec:
+  name: "{{- tpl ($value.name) $ }}"
+  owner: "{{- tpl ($value.owner) $ }}"
+  cluster:
+    name:  {{ $value.targetClusterName }}
+  databaseReclaimPolicy: {{ $value.reclaimPolicy }}
+{{- end }}

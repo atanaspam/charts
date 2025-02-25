@@ -55,6 +55,7 @@ spec:
   tls:
     secretName: {{ include "service.name" . }}-cert
 ---
+{{- if .Values.ingress.issuer }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -73,6 +74,8 @@ spec:
   - {{ tpl .match $ }}
   {{- end }}
 {{- end }}
+{{- end }}
+
 {{- range .Values.customMiddleware.definitions }}
 ---
 {{ include "service.render" (dict "value" . "context" $) }}

@@ -41,6 +41,7 @@ spec:
       containers:
         - name: {{ include "service.name" . }}
           image: "{{ .Values.container.image | default (printf "lscr.io/linuxserver/%s:latest" (include "service.name" .)) }}"
+          imagePullPolicy: {{ .Values.container.imagePullPolicy }}
           {{- with .Values.requests }}
           requests:
             {{- toYaml . | nindent 12 }}

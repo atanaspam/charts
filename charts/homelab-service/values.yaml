@@ -18,6 +18,12 @@ ingress:
   #      - name: https-redirectscheme
   #        namespace: traefik
 
+databases: []
+  # - name: "{{ $.Release.Name }}"
+  #   owner: "{{ $.Release.Name }}-owner"
+  #   targetClusterName: shared
+  #   targetClusterNamespace: cnpg
+
 customMiddleware:
   definitions: []
 
@@ -38,6 +44,7 @@ podSecurityContext: {}
 initContainers: []
 container:
   image: ""
+  imagePullPolicy: IfNotPresent
   command: []
   args: []
   # runtimeClassName: nvidia
