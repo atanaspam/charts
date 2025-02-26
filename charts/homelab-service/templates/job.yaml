@@ -19,6 +19,7 @@ spec:
         - name: {{ .Values.job.name}}
           image: {{ .Values.container.image }}
           command: {{ .Values.job.command }}
+          args: {{ .Values.job.args }}
           {{- with .Values.job.env }}
           env:
             {{- toYaml . | nindent 12 }}
