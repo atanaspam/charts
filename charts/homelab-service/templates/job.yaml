@@ -18,8 +18,14 @@ spec:
       containers:
         - name: {{ .Values.job.name}}
           image: {{ .Values.container.image }}
-          command: {{ .Values.job.command }}
-          args: {{ .Values.job.args }}
+          command:
+          {{  range .Values.job.command }}
+          - {{ . }}
+          {{ end }}
+          args:
+          {{  range .Values.job.args }}
+          - {{ . }}
+          {{ end }}
           {{- with .Values.job.env }}
           env:
             {{- toYaml . | nindent 12 }}
