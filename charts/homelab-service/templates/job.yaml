@@ -1,0 +1,25 @@
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.job.name}}
+  {{- with .Values.job.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  template:
+    metadata:
+      name: {{ .Values.job.name}}
+      labels:
+        {{- include "service.labels" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: {{ .Values.job.name}}
+          image: {{ .Values.container.image }}
+          command: {{ .Values.job.command }}
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi

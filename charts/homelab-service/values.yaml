@@ -100,6 +100,20 @@ resources:
     cpu: 100m
     memory: 128Mi
 
+hpa:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+
+job:
+  enabled: false
+  name: job-name
+  command: []
+  annotations: {}
+    # argocd.argoproj.io/hook: PreSync
+    # argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+
+
 monitoring:
   serviceMonitor:
     create: false
