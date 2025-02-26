@@ -1,4 +1,4 @@
-
+{{- if .Values.job.enabled }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -19,7 +19,12 @@ spec:
         - name: {{ .Values.job.name}}
           image: {{ .Values.container.image }}
           command: {{ .Values.job.command }}
+          {{- with .Values.job.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           resources:
             requests:
               cpu: 200m
               memory: 256Mi
+{{- end }}
