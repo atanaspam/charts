@@ -108,6 +108,9 @@ hpa:
 job:
   enabled: false
   name: job-name
+  env: []
+    # - name: PUID
+    #   value: "5000"
   command: []
   annotations: {}
     # argocd.argoproj.io/hook: PreSync
