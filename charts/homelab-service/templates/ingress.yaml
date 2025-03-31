@@ -33,7 +33,7 @@ spec:
         {{- end }}
     {{- range .Values.ingress.extraRoutes }}
     - kind: Rule
-      match: {{  printf "Host(`%s`)" (tpl .match $) }}
+      match: {{  printf "`%s`" (tpl .match $) }}
       {{- if .customMiddlewares }}
       middlewares:
         {{- range .customMiddlewares }}

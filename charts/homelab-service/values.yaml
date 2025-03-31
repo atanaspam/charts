@@ -100,11 +100,6 @@ resources:
     cpu: 100m
     memory: 128Mi
 
-hpa:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 3
-
 job:
   enabled: false
   name: job-name
@@ -117,6 +112,10 @@ job:
     # argocd.argoproj.io/hook: PreSync
     # argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 
+externalSecrets: []
+  # - name: app-secret
+  #   path: software/app-secret
+  #   refreshAfter: 300s
 
 monitoring:
   serviceMonitor:
