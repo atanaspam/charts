@@ -30,14 +30,6 @@ spec:
       {{- if .Values.container.runtimeClassName }}
       runtimeClassName: {{ .Values.container.runtimeClassName }}
       {{- end }}
-      # securityContext:
-      #   runAsUser: {{ .Values.securityContext.runAsUser | default "1001" }}
-      #   runAsGroup: {{ .Values.securityContext.runAsGroup | default "1001" }}
-      #   fsGroup: {{ .Values.securityContext.fsGroup | default "1001" }}
-      #   fsGroupChangePolicy: {{ .Values.securityContext.fsGroupChangePolicy | default "OnRootMismatch" | quote }} # Do we need quotes?
-      #   allowPrivilegeEscalation:  {{ .Values.securityContext.allowPrivilegeEscalation | default "false" }}
-        # capabilities:
-        #   add: ["NET_ADMIN", "SYS_TIME"]
       containers:
         - name: {{ include "service.name" . }}
           image: "{{ .Values.container.image | default (printf "lscr.io/linuxserver/%s:latest" (include "service.name" .)) }}"
