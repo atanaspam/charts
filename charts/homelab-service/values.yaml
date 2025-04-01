@@ -113,10 +113,10 @@ job:
     # argocd.argoproj.io/hook: PreSync
     # argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 
-externalSecrets: []
-  # - name: app-secret
-  #   path: software/app-secret
-  #   refreshAfter: 300s
+externalSecrets:
+  - name: "{{ $.Release.Name }}"
+    path: software/{{ $.Values.clusterName }}/{{ $.Release.Name }}
+    refreshAfter: 300s
 
 monitoring:
   serviceMonitor:
