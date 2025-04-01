@@ -14,7 +14,7 @@ spec:
     - websecure
   routes:
     - kind: Rule
-      match: {{  printf "Host(`%s.%s`)" (include "service.name" .) (include "cluster.fqdn" .) }}
+      match: {{ printf "Host(`%s.%s`)" (include "service.name" .) (include "cluster.fqdn" .) }}
       middlewares:
         - name: https-redirectscheme
           namespace: traefik
@@ -33,7 +33,7 @@ spec:
         {{- end }}
     {{- range .Values.ingress.extraRoutes }}
     - kind: Rule
-      match: {{  printf "`%s`" (tpl .match $) }}
+      match: {{  printf "%s" (tpl .match $) }}
       {{- if .customMiddlewares }}
       middlewares:
         {{- range .customMiddlewares }}
