@@ -71,7 +71,7 @@ spec:
   dnsNames:
   - {{  printf "%s.%s" (include "service.name" .) (include "cluster.fqdn" .) }}
   {{- range .Values.ingress.extraRoutes }}
-  - {{ tpl .match $ }}
+  - {{ tpl .certificateHostname $ }}
   {{- end }}
 {{- end }}
 {{- end }}
