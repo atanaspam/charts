@@ -17,6 +17,7 @@ spec:
   template:
     metadata:
       labels:
+        app.kubernetes.io/component: backend
         {{- include "service.labels" . | nindent 8 }}
       {{- with .Values.podAnnotations }}
       annotations:
@@ -27,6 +28,10 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "service.name" . }}
+      automountServiceAccountToken: true
+      {{- end }}
       {{- if .Values.container.runtimeClassName }}
       runtimeClassName: {{ .Values.container.runtimeClassName }}
       {{- end }}
@@ -34,10 +39,6 @@ spec:
         - name: {{ include "service.name" . }}
           image: "{{ .Values.container.image | default (printf "lscr.io/linuxserver/%s:latest" (include "service.name" .)) }}"
           imagePullPolicy: {{ .Values.container.imagePullPolicy }}
-          {{- with .Values.requests }}
-          requests:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
           {{- with .Values.container.ports }}
           ports:
             {{- toYaml . | nindent 12 }}

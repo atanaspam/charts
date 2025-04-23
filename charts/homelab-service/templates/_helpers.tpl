@@ -51,6 +51,25 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+Homepage annotations
+*/}}
+{{- define "ingress.homepageAnnotations" -}}
+gethomepage.dev/href: {{ printf "https://%s.%s" (include "service.name" .) (include "cluster.fqdn" .) }}
+gethomepage.dev/enabled: {{ quote .Values.homepage.enabled }}
+{{- if .Values.homepage.group }}
+gethomepage.dev/group: {{ .Values.homepage.group }}
+{{- end }}
+gethomepage.dev/icon: {{ printf "%s.png" (include "service.name" .) }}
+# gethomepage.dev/app: emby-app # optional, may be needed if app.kubernetes.io/name != ingress metadata.name
+gethomepage.dev/name: {{ include "service.name" . }}
+gethomepage.dev/widget.type: {{ tpl .Values.homepage.widgetType . }}
+gethomepage.dev/widget.url: {{ printf "https://%s.%s" (include "service.name" .) (include "cluster.fqdn" .) }}
+gethomepage.dev/pod-selector: {{ printf "app.kubernetes.io/name=%s" (include "service.name" .) }}
+gethomepage.dev/weight: {{ .Values.homepage.weight }}
+gethomepage.dev/instance: {{ .Values.clusterName }}
+{{- end }}
+
+{{/*
 Renders a complete tree, even values that contains template.
 */}}
 {{- define "service.render" -}}
