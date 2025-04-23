@@ -135,9 +135,9 @@ clusterRoleBinding: {}
 
 homepage:
   enabled: false
-  group: null
-  widgetType: "{{ $.Release.Name }}"
-  weight: 10
+  name: "{{ $.Release.Name }}"
+  group: services
+  weight: "10"
 
 monitoring:
   serviceMonitor:
