@@ -7,7 +7,11 @@ metadata:
   annotations:
     external-dns.alpha.kubernetes.io/target: {{ include "cluster.fqdn" . }}
     kubernetes.io/ingress.class: traefik
+    {{- if .Values.homepage.enabled }}
+      {{- include "ingress.homepageAnnotations" . | nindent 4 }}
+    {{- end }}
   labels:
+    app.kubernetes.io/component: backend
     {{- include "service.labels" . | nindent 4 }}
 spec:
   entryPoints:

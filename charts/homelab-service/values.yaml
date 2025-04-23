@@ -24,6 +24,7 @@ databases: []
   #   owner: "{{ $.Release.Name }}-owner"
   #   targetClusterName: shared
   #   targetClusterNamespace: cnpg
+  #   reclaimPolicy: retain
 
 customMiddleware:
   definitions: []
@@ -117,6 +118,26 @@ externalSecrets:
   - name: "{{ $.Release.Name }}"
     path: software/{{ $.Values.clusterName }}/{{ $.Release.Name }}
     refreshAfter: 300s
+
+serviceAccount:
+  create: false
+  secret:
+    create: false
+
+clusterRole:
+  rules: []
+
+clusterRoleBinding: {}
+  # role: "{{ $.Release.Name }}"
+  # serviceAccount:
+  #   name: "{{ $.Release.Name }}"
+  #   namespace: "{{ $.Release.Namespace }}"
+
+homepage:
+  enabled: false
+  group: null
+  widgetType: "{{ $.Release.Name }}"
+  weight: 10
 
 monitoring:
   serviceMonitor:

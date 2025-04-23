@@ -28,8 +28,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "service.name" . }}-exporter
-      app.kubernetes.io/instance: {{ include "service.name" . }}-exporter
+      app.kubernetes.io/name: {{ include "service.name" . }}
   endpoints:
     - port: monitoring
       interval: {{ .Values.monitoring.serviceMonitor.interval }}

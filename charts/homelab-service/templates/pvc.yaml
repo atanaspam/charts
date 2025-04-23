@@ -5,6 +5,7 @@ metadata:
   name: {{ $value.name }}
   namespace: {{ $.Release.Namespace }}
   labels:
+    app.kubernetes.io/component: storage
     {{- include "service.labels" $ | nindent 4 }}
   {{- with $value.annotations }}
   annotations:

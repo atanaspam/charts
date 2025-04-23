@@ -12,6 +12,7 @@ spec:
     metadata:
       name: {{ .Values.job.name}}
       labels:
+        app.kubernetes.io/component: backend
         {{- include "service.labels" . | nindent 8 }}
     spec:
       restartPolicy: Never

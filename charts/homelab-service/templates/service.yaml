@@ -14,7 +14,7 @@ spec:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 ---
-{{- if and .Values.monitoring.serviceMonitor.create (not .Values.monitoring.exportarr.create) }}
+{{- if and .Values.monitoring.serviceMonitor.create (not .Values.monitoring.exportarr.create) -}}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
