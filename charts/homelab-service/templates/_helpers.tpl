@@ -59,7 +59,7 @@ gethomepage.dev/enabled: {{ quote .Values.homepage.enabled }}
 {{- if .Values.homepage.group }}
 gethomepage.dev/group: {{ .Values.homepage.group }}
 {{- end }}
-gethomepage.dev/icon: {{ printf "%s.png" (include "service.name" .) }}
+gethomepage.dev/icon: {{ printf "%s.png" (tpl .Values.homepage.icon .) }}
 gethomepage.dev/name: {{ tpl .Values.homepage.name . }}
 #gethomepage.dev/widget.type: { tpl .Values.homepage.widgetType . }
 #gethomepage.dev/widget.url: { printf "https://%s.%s" (include "service.name" .) (include "cluster.fqdn" .) }

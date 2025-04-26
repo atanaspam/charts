@@ -136,17 +136,19 @@ clusterRoleBinding: {}
 homepage:
   enabled: false
   name: "{{ $.Release.Name }}"
+  icon: "{{ $.Release.Name }}"
   group: services
   weight: "10"
 
 monitoring:
   serviceMonitor:
     create: false
-    interval: 3m
-    scrapeTimeout: 15s
+    port: monitoring
+    interval: 30s
+    scrapeTimeout: 5s
   exportarr:
-    version: latest
-    apiKey: ""
     create: false
+    version: latest
+    apiKeySecretName: "api_key"
 
 extraObjects: []
