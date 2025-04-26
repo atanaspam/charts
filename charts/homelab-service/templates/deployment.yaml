@@ -65,9 +65,51 @@ spec:
           args:
             {{- toYaml .Values.container.args | nindent 12 }}
           {{- end }}
-      {{- with .Values.initContainers }}
+      {{- if or (.Values.initContainers) (.Values.monitoring.exportarr.create) }}
       initContainers:
-        {{- toYaml . | nindent 8 }}
+      {{- with .Values.initContainers }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+        {{- if .Values.monitoring.exportarr.create }}
+        - name: {{ include "service.name" . }}-exporter
+          image: ghcr.io/onedr0p/exportarr:{{ .Values.monitoring.exportarr.version | default "latest" }}
+          imagePullPolicy: IfNotPresent
+          restartPolicy: Always
+          args:
+            - {{ include "service.name" . }}
+          env:
+            - name: PORT
+              value: "9707"
+            - name: URL
+              value: "http://{{ include "service.name" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ (index .Values.container.ports 0).containerPort }}"
+            - name: APIKEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "service.name" . }}
+                  key: {{ .Values.monitoring.exportarr.apiKeySecretName}}
+          ports:
+            - name: monitoring
+              containerPort: 9707
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: monitoring
+            failureThreshold: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: monitoring
+            failureThreshold: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+        {{- end }}
       {{- end }}
       volumes:
         {{- tpl (.Values.volumes | toYaml) . | nindent 8 }}
