@@ -59,7 +59,7 @@ spec:
   tls:
     secretName: {{ include "service.name" . }}-cert
 ---
-{{- if (and .Values.serviceAccount.create .Values.ingress.issuer) }}
+{{- if (and .Values.ingress.create .Values.ingress.issuer) }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
