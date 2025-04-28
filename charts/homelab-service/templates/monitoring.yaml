@@ -9,11 +9,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      {{- if .Values.monitoring.exportarr.create }}
-      app.kubernetes.io/name: {{ include "service.name" . }}-exporter
-      {{- else }}
       app.kubernetes.io/name: {{ include "service.name" . }}
-      {{- end }}
   endpoints:
     - port: {{ .Values.monitoring.serviceMonitor.port }}
       interval: {{ .Values.monitoring.serviceMonitor.interval }}
