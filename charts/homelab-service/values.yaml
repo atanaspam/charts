@@ -9,6 +9,8 @@ ingress:
   issuer:
     name: letsencrypt-staging-issuer
   defaultRoute:
+    externalDns:
+      enabled: true
     extraMiddlewares: []
     #  - name: keycloak-openid
     #    namespace: traefik
@@ -89,10 +91,14 @@ livenessProbe:
   httpGet:
     path: /
     port: http
+  initialDelaySeconds: 10
+  periodSeconds: 30
 readinessProbe:
   httpGet:
     path: /
     port: http
+  initialDelaySeconds: 10
+  periodSeconds: 30
 
 resources:
   limits:

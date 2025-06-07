@@ -55,7 +55,7 @@ spec:
           {{- end }}
           {{- with .Values.container.env }}
           env:
-            {{- toYaml . | nindent 12 }}
+            {{- tpl (. | toYaml) $ | nindent 12 }}
           {{- end }}
           {{- if .Values.container.command }}
           command:

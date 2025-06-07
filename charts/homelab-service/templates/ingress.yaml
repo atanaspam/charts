@@ -5,7 +5,9 @@ metadata:
   name: {{ include "service.name" . }}
   namespace: {{ .Release.Namespace }}
   annotations:
+    {{- if .Values.ingress.defaultRoute.externalDns.enabled }}
     external-dns.alpha.kubernetes.io/target: {{ include "cluster.fqdn" . }}
+    {{- end }}
     kubernetes.io/ingress.class: traefik
     {{- if .Values.homepage.enabled }}
       {{- include "ingress.homepageAnnotations" . | nindent 4 }}
