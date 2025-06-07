@@ -24,7 +24,7 @@ jobs:
       - name: Helm Template
         run: |
           # Test template rendering with default values
-          helm template charts/homelab-service > /dev/null
+          helm template charts/homelab-service > rendered.yml
 
           # Test template rendering with test values if they exist
           if [ -f "test-values.yaml" ]; then
