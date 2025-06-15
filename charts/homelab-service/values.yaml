@@ -19,7 +19,7 @@ deployment:
     # runAsNonRoot: true
     # runAsUser: 1000
   container:
-    # image: "ghcr.io/org/repo:tag"
+    image: "ghcr.io/org/repo:tag"
     imagePullPolicy: IfNotPresent
     command: []
     args: []
@@ -60,44 +60,6 @@ deployment:
         cpu: 100m
         memory: 128Mi
   initContainers: []
-
-# extraDeployments:
-#   - name: "{{ $.Release.Name }}-redis"
-#     component: redis
-#     replicaCount: 1
-#     image: redis:7.2-alpine
-#     imagePullPolicy: IfNotPresent
-#     ports:
-#       - name: redis
-#         containerPort: 6379
-#         protocol: TCP
-#     env:
-#       - name: REDIS_PASSWORD
-#         valueFrom:
-#           secretKeyRef:
-#             name: "{{ $.Release.Name }}-redis"
-#             key: redis-password
-#     resources:
-#       limits:
-#         cpu: 200m
-#         memory: 256Mi
-#       requests:
-#         cpu: 100m
-#         memory: 128Mi
-#     service:
-#       type: ClusterIP
-#       ports:
-#         - port: 6379
-#           targetPort: redis
-#           protocol: TCP
-#           name: redis
-#     volumes:
-#       - name: redis-data
-#         persistentVolumeClaim:
-#           claimName: "{{ $.Release.Name }}-redis-data"
-#     volumeMounts:
-#       - name: redis-data
-#         mountPath: /data
 
 ingress:
   create: true

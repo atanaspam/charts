@@ -39,7 +39,8 @@ spec:
       runtimeClassName: {{ .runtimeClassName }}
       {{- end }}
       containers:
-        - image: {{ .container.image }}
+        - name: {{ include "service.name" $ }}
+          image: {{ .container.image }}
           imagePullPolicy: {{ .container.imagePullPolicy }}
           {{- with .container.ports }}
           ports:

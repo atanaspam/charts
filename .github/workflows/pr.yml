@@ -3,7 +3,7 @@ name: Validate Charts
 on:
   pull_request:
     branches:
-      - 'main'
+      - main
 
 jobs:
   validate:
@@ -24,7 +24,7 @@ jobs:
       - name: Helm Template
         run: |
           # Test template rendering with default values
-          helm template charts/homelab-service > rendered.yml
+          helm template charts/homelab-service > rendered.yaml
 
           # Test template rendering with test values if they exist
           if [ -f "test-values.yaml" ]; then
@@ -36,7 +36,7 @@ jobs:
 
       - uses: docker://ghcr.io/yannh/kubeconform:latest
         with:
-          args: -schema-location default -schema-location https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json rendered.yml
+          args: -schema-location default -schema-location https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json rendered.yaml
 
       - name: Validate Conventional Commits
         uses: amannn/action-semantic-pull-request@v5
