@@ -4,6 +4,63 @@ topLevelDomain: example.com
 # subDomain: ""
 clusterName: k3s
 
+deployment:
+  create: true
+  name: "{{ include \"service.name\" $ }}"
+  podAnnotations: {}
+  replicaCount: 1
+  # runtimeClassName: nvidia
+  progressDeadlineSeconds: 600
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+  container:
+    image: "ghcr.io/org/repo:tag"
+    imagePullPolicy: IfNotPresent
+    command: []
+    args: []
+    ports:
+      - name: http
+        containerPort: 8080
+        protocol: TCP
+    volumeMounts:
+      - mountPath: /config
+        name: config
+    env:
+      - name: PUID
+        value: "5000"
+      - name: PGID
+        value: "5000"
+      - name: APIKEY
+        valueFrom:
+          secretKeyRef:
+            name: "{{ $.Release.Name }}"
+            key: TZ
+    livenessProbe:
+      httpGet:
+        path: /
+        port: http
+      initialDelaySeconds: 10
+      periodSeconds: 30
+    readinessProbe:
+      httpGet:
+        path: /
+        port: http
+      initialDelaySeconds: 10
+      periodSeconds: 30
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+  initContainers: []
+
 ingress:
   create: true
   issuer:
@@ -31,42 +88,6 @@ databases: []
 customMiddleware:
   definitions: []
 
-replicaCount: 1
-progressDeadlineSeconds: 600
-
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
-
-podAnnotations: {}
-podSecurityContext: {}
-
-initContainers: []
-container:
-  image: ""
-  imagePullPolicy: IfNotPresent
-  command: []
-  args: []
-  # runtimeClassName: nvidia
-  ports:
-    - name: http
-      containerPort: 8080
-      protocol: TCP
-  volumeMounts:
-    - mountPath: /config
-      name: config
-  env:
-    - name: PUID
-      value: "5000"
-    - name: PGID
-      value: "5000"
-    - name: TZ
-      value: "Europe/Amsterdam"
-
 volumes:
   - name: config
     persistentVolumeClaim:
@@ -86,27 +107,6 @@ service:
       targetPort: http
       protocol: TCP
       name: http
-
-livenessProbe:
-  httpGet:
-    path: /
-    port: http
-  initialDelaySeconds: 10
-  periodSeconds: 30
-readinessProbe:
-  httpGet:
-    path: /
-    port: http
-  initialDelaySeconds: 10
-  periodSeconds: 30
-
-resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 100m
-    memory: 128Mi
 
 job:
   enabled: false
@@ -140,7 +140,7 @@ clusterRoleBinding: {}
   #   namespace: "{{ $.Release.Namespace }}"
 
 homepage:
-  enabled: false
+  enabled: true
   name: "{{ $.Release.Name }}"
   icon: "{{ $.Release.Name }}"
   group: services
