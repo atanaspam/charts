@@ -1,0 +1,77 @@
+{{- range .Values.extraDeployments }}
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ tpl .name $ }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ tpl .name $ }}
+      app.kubernetes.io/instance: {{ $.Release.Name }}
+  replicas: {{ .replicaCount }}
+  progressDeadlineSeconds: {{ .progressDeadlineSeconds }}
+  revisionHistoryLimit: 2
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: {{ include "service.name" . }}
+        helm.sh/chart: {{ include "service.chart" . }}
+        app.kubernetes.io/name: {{ tpl .name $ }}
+        app.kubernetes.io/instance: {{ $.Release.Namespace }}
+        app.kubernetes.io/component: backend
+      {{- with .podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .runtimeClassName }}
+      runtimeClassName: {{ .runtimeClassName }}
+      {{- end }}
+      containers:
+        - image: {{ .container.image }}
+          imagePullPolicy: {{ .container.imagePullPolicy }}
+          {{- with .ports }}
+          ports:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            {{- toYaml .container.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .container.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .container.resources | nindent 12 }}
+          {{- with .container.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .container.env }}
+          env:
+            {{- tpl (. | toYaml) $ | nindent 12 }}
+          {{- end }}
+          {{- if .container.command }}
+          command:
+            {{- toYaml .container.command | nindent 12 }}
+          {{- end }}
+          {{- if .container.args }}
+          args:
+            {{- toYaml .container.args | nindent 12 }}
+          {{- end }}
+      volumes:
+        {{- tpl (.Values.volumes | toYaml) . | nindent 8 }}
+      {{- if or (.initContainers) (.Values.monitoring.exportarr.create) }}
+      initContainers:
+        {{- with .initContainers }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+{{- end }}

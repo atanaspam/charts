@@ -1,16 +1,19 @@
+{{- with .Values.deployment -}}
+{{- if .create -}}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: {{ include "service.name" . }}
-  namespace: {{ .Release.Namespace }}
+  name: {{ tpl .name $ }}
+  namespace: {{ $.Release.Namespace }}
   labels:
-    {{- include "service.labels" . | nindent 4 }}
+    {{- include "service.labels" $ | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      {{- include "service.selectorLabels" . | nindent 6 }}
-  replicas: {{ .Values.replicaCount }}
-  progressDeadlineSeconds: {{ .Values.progressDeadlineSeconds }}
+      app.kubernetes.io/name: {{ tpl .name $ }}
+      app.kubernetes.io/instance: {{ $.Release.Name }}
+  replicas: {{ .replicaCount }}
+  progressDeadlineSeconds: {{ .progressDeadlineSeconds }}
   revisionHistoryLimit: 2
   strategy:
     type: Recreate
@@ -18,59 +21,60 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/component: backend
-        {{- include "service.labels" . | nindent 8 }}
-      {{- with .Values.podAnnotations }}
+        {{- include "service.labels" $ | nindent 8 }}
+      {{- with .podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
-      {{- with .Values.securityContext }}
+      {{- with .securityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .Values.serviceAccount.create }}
-      serviceAccountName: {{ include "service.name" . }}
+      {{- if $.Values.serviceAccount.create }}
+      serviceAccountName: {{ include "service.name" $ }}
       automountServiceAccountToken: true
       {{- end }}
-      {{- if .Values.container.runtimeClassName }}
-      runtimeClassName: {{ .Values.container.runtimeClassName }}
+      {{- if .runtimeClassName }}
+      runtimeClassName: {{ .runtimeClassName }}
       {{- end }}
       containers:
-        - name: {{ include "service.name" . }}
-          image: "{{ .Values.container.image | default (printf "lscr.io/linuxserver/%s:latest" (include "service.name" .)) }}"
-          imagePullPolicy: {{ .Values.container.imagePullPolicy }}
-          {{- with .Values.container.ports }}
+        - image: {{ .container.image }}
+          imagePullPolicy: {{ .container.imagePullPolicy }}
+          {{- with .container.ports }}
           ports:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           livenessProbe:
-            {{- toYaml .Values.livenessProbe | nindent 12 }}
+            {{- tpl (.container.livenessProbe | toYaml) $ | nindent 12 }}
           readinessProbe:
-            {{- toYaml .Values.readinessProbe | nindent 12 }}
+            {{- tpl (.container.livenessProbe | toYaml) $ | nindent 12 }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-          {{- with .Values.container.volumeMounts }}
+            {{- toYaml .container.resources | nindent 12 }}
+          {{- with .container.volumeMounts }}
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.container.env }}
+          {{- with .container.env }}
           env:
             {{- tpl (. | toYaml) $ | nindent 12 }}
           {{- end }}
-          {{- if .Values.container.command }}
+          {{- if .container.command }}
           command:
-            {{- toYaml .Values.container.command | nindent 12 }}
+            {{- toYaml .container.command | nindent 12 }}
           {{- end }}
-          {{- if .Values.container.args }}
+          {{- if .container.args }}
           args:
-            {{- toYaml .Values.container.args | nindent 12 }}
+            {{- toYaml .container.args | nindent 12 }}
           {{- end }}
-      {{- if or (.Values.initContainers) (.Values.monitoring.exportarr.create) }}
+      volumes:
+        {{- tpl ($.Values.volumes | toYaml) $ | nindent 8 }}
+      {{- if or (.initContainers) ($.Values.monitoring.exportarr.create) }}
       initContainers:
-      {{- with .Values.initContainers }}
+      {{- with .initContainers }}
       {{- toYaml . | nindent 8 }}
       {{- end }}
-        {{- if .Values.monitoring.exportarr.create }}
+        {{- if $.Values.monitoring.exportarr.create }}
         - name: {{ include "service.name" . }}-exporter
           image: ghcr.io/onedr0p/exportarr:{{ .Values.monitoring.exportarr.version | default "latest" }}
           imagePullPolicy: IfNotPresent
@@ -85,8 +89,8 @@ spec:
             - name: APIKEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "service.name" . }}
-                  key: {{ .Values.monitoring.exportarr.apiKeySecretName}}
+                  name: {{ include "service.name" $ }}
+                  key: {{ $.Values.monitoring.exportarr.apiKeySecretName}}
           ports:
             - name: monitoring
               containerPort: 9707
@@ -111,5 +115,5 @@ spec:
               memory: 256Mi
         {{- end }}
       {{- end }}
-      volumes:
-        {{- tpl (.Values.volumes | toYaml) . | nindent 8 }}
+{{- end }}
+{{- end }}
