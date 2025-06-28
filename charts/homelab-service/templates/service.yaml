@@ -8,7 +8,8 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   selector:
-    {{- include "service.selectorLabels" . | nindent 6 }}
+    app.kubernetes.io/name: {{ tpl .Values.deployment.name . }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
   {{- if or (.Values.service.ports) (.Values.monitoring.exportarr.create) }}
   ports:
     {{- with .Values.service.ports }}
