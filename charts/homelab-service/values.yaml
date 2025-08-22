@@ -1,7 +1,7 @@
 nameOverride: ""
 
 topLevelDomain: example.com
-# subDomain: ""
+subDomain: internal
 clusterName: k3s
 
 deployment:
