@@ -19,4 +19,5 @@ spec:
   resources:
     requests:
       storage: {{ $value.size }}
+---
 {{- end }}
