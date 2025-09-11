@@ -6,7 +6,11 @@ metadata:
   name: {{ tpl .name $ }}
   namespace: {{ $.Release.Namespace }}
   labels:
-    {{- include "service.labels" . | nindent 4 }}
+    app: {{ include "service.name" $ }}
+    helm.sh/chart: {{ include "service.chart" $ }}
+    app.kubernetes.io/name: {{ tpl .name $ }}
+    app.kubernetes.io/instance: {{ $.Release.Namespace }}
+    app.kubernetes.io/component: backend
 spec:
   selector:
     matchLabels:
@@ -20,8 +24,8 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ include "service.name" . }}
-        helm.sh/chart: {{ include "service.chart" . }}
+        app: {{ include "service.name" $ }}
+        helm.sh/chart: {{ include "service.chart" $ }}
         app.kubernetes.io/name: {{ tpl .name $ }}
         app.kubernetes.io/instance: {{ $.Release.Namespace }}
         app.kubernetes.io/component: backend
@@ -68,8 +72,8 @@ spec:
             {{- toYaml .container.args | nindent 12 }}
           {{- end }}
       volumes:
-        {{- tpl (.Values.volumes | toYaml) . | nindent 8 }}
-      {{- if or (.initContainers) (.Values.monitoring.exportarr.create) }}
+        {{- tpl ($.Values.volumes | toYaml) $ | nindent 8 }}
+      {{- if or (.initContainers) ($.Values.monitoring.exportarr.create) }}
       initContainers:
         {{- with .initContainers }}
           {{- toYaml . | nindent 8 }}
