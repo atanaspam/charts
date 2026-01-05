@@ -45,7 +45,7 @@ spec:
         - name: {{ include "service.name" $ }}
           image: {{ .container.image }}
           imagePullPolicy: {{ .container.imagePullPolicy }}
-          {{- with .ports }}
+          {{- with .container.ports }}
           ports:
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -53,6 +53,8 @@ spec:
             {{- toYaml .container.livenessProbe | nindent 12 }}
           readinessProbe:
             {{- toYaml .container.readinessProbe | nindent 12 }}
+          startupProbe:
+            {{- toYaml .container.startupProbe | nindent 12 }}
           resources:
             {{- toYaml .container.resources | nindent 12 }}
           {{- with .container.volumeMounts }}

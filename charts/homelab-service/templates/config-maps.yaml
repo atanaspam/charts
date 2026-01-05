@@ -1,0 +1,12 @@
+{{- range $value := .Values.configmaps }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $value.name }}
+data:
+{{- range $map_item := $value.map_items }}
+  {{ $map_item.name }}: |
+{{ $map_item.contents | indent 4 }}
+{{- end }}
+---
+{{- end }}
