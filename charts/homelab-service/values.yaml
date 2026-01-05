@@ -35,7 +35,7 @@ deployment:
         value: "5000"
       - name: PGID
         value: "5000"
-      - name: APIKEY
+      - name: TZ
         valueFrom:
           secretKeyRef:
             name: "{{ $.Release.Name }}"
@@ -138,6 +138,8 @@ clusterRoleBinding: {}
   # serviceAccount:
   #   name: "{{ $.Release.Name }}"
   #   namespace: "{{ $.Release.Namespace }}"
+
+configmaps: []
 
 homepage:
   enabled: true
