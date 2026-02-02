@@ -25,10 +25,45 @@ jobs:
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
+      - name: Check commit type
+        id: commit
+        run: |
+          MSG=$(git log -1 --pretty=%s)
+          TYPE=$(echo "$MSG" | sed -n 's/^\([a-z]*\).*/\1/p')
+          if [[ "$TYPE" == "feat" || "$TYPE" == "fix" || "$TYPE" == "perf" ]]; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get next version
+        if: steps.commit.outputs.should_release == 'true'
+        id: version
+        uses: paulhatch/semantic-version@v5.4.0
+        with:
+          tag_prefix: "homelab-service-"
+          major_pattern: "/!:|BREAKING CHANGE:/"
+          minor_pattern: "/feat(\\(.+\\))?:/"
+          version_format: "${major}.${minor}.${patch}"
+
+      - name: Bump Chart.yaml version
+        if: steps.commit.outputs.should_release == 'true'
+        run: |
+          sed -i "s/^version: .*/version: ${{ steps.version.outputs.version }}/" charts/homelab-service/Chart.yaml
+
+      - name: Commit version bump
+        if: steps.commit.outputs.should_release == 'true'
+        run: |
+          git add charts/homelab-service/Chart.yaml
+          git commit -m "chore: bump chart version to ${{ steps.version.outputs.version }} [skip ci]"
+          git push
+
       - name: Install Helm
+        if: steps.commit.outputs.should_release == 'true'
         uses: azure/setup-helm@v4
 
       - name: Run chart-releaser
+        if: steps.commit.outputs.should_release == 'true'
         uses: helm/chart-releaser-action@v1
         with:
           config: cr.yaml
