@@ -27,7 +27,7 @@ jobs:
 
       - name: Install helm-unittest
         run: |
-          helm plugin install https://github.com/helm-unittest/helm-unittest
+          helm plugin install https://github.com/helm-unittest/helm-unittest --verify=false
 
       - name: Helm Lint
         run: |
