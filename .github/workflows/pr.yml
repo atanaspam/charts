@@ -23,7 +23,7 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v4
         with:
-          version: ${{ env.TERRAFORM_VERSION }}
+          version: ${{ env.HELM_VERSION }}
 
       - name: Install helm-unittest
         run: |
