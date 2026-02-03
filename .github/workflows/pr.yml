@@ -14,12 +14,28 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Read versions
+        run: |
+          VER=`cat .tool-versions | grep -E "^helm[[:space:]]+" | awk '{print $2}'`
+          echo "HELM_VERSION=$VER" >> $GITHUB_ENV
+          echo $VER
+
       - name: Install Helm
         uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Install helm-unittest
+        run: |
+          helm plugin install https://github.com/helm-unittest/helm-unittest
 
       - name: Helm Lint
         run: |
           helm lint charts/homelab-service
+
+      - name: Helm Unit Tests
+        run: |
+          helm unittest charts/homelab-service
 
       - name: Helm Template
         run: |

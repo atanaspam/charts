@@ -159,4 +159,6 @@ monitoring:
     version: latest
     apiKeySecretName: "api_key"
 
+extraDeployments: []
+
 extraObjects: []
