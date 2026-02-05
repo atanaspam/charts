@@ -49,7 +49,7 @@ spec:
           livenessProbe:
             {{- tpl (.container.livenessProbe | toYaml) $ | nindent 12 }}
           readinessProbe:
-            {{- tpl (.container.livenessProbe | toYaml) $ | nindent 12 }}
+            {{- tpl (.container.readinessProbe | toYaml) $ | nindent 12 }}
           resources:
             {{- toYaml .container.resources | nindent 12 }}
           {{- with .container.volumeMounts }}
@@ -76,17 +76,17 @@ spec:
       {{- toYaml . | nindent 8 }}
       {{- end }}
         {{- if $.Values.monitoring.exportarr.create }}
-        - name: {{ include "service.name" . }}-exporter
-          image: ghcr.io/onedr0p/exportarr:{{ .Values.monitoring.exportarr.version | default "latest" }}
+        - name: {{ include "service.name" $ }}-exporter
+          image: ghcr.io/onedr0p/exportarr:{{ $.Values.monitoring.exportarr.version | default "latest" }}
           imagePullPolicy: IfNotPresent
           restartPolicy: Always
           args:
-            - {{ include "service.name" . }}
+            - {{ include "service.name" $ }}
           env:
             - name: PORT
               value: "9707"
             - name: URL
-              value: "http://{{ include "service.name" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ (index .Values.container.ports 0).containerPort }}"
+              value: "http://{{ include "service.name" $ }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ (index .container.ports 0).containerPort }}"
             - name: APIKEY
               valueFrom:
                 secretKeyRef:

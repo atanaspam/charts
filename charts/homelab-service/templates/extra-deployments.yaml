@@ -9,7 +9,7 @@ metadata:
     app: {{ include "service.name" $ }}
     helm.sh/chart: {{ include "service.chart" $ }}
     app.kubernetes.io/name: {{ tpl .name $ }}
-    app.kubernetes.io/instance: {{ $.Release.Namespace }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
     app.kubernetes.io/component: backend
 spec:
   selector:
@@ -27,7 +27,7 @@ spec:
         app: {{ include "service.name" $ }}
         helm.sh/chart: {{ include "service.chart" $ }}
         app.kubernetes.io/name: {{ tpl .name $ }}
-        app.kubernetes.io/instance: {{ $.Release.Namespace }}
+        app.kubernetes.io/instance: {{ $.Release.Name }}
         app.kubernetes.io/component: backend
       {{- with .podAnnotations }}
       annotations:
