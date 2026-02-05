@@ -1,0 +1,192 @@
+suite: ingress
+templates:
+  - templates/ingress.yaml
+release:
+  name: test-release
+  namespace: default
+tests:
+  - it: should create an IngressRoute and Certificate
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: should create an IngressRoute
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: IngressRoute
+      - equal:
+          path: apiVersion
+          value: traefik.io/v1alpha1
+
+  - it: should set the correct host match rule
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.routes[0].match
+          value: "Host(`test-release.k3s.internal.example.com`)"
+
+  - it: should use websecure entrypoint
+    documentIndex: 0
+    asserts:
+      - contains:
+          path: spec.entryPoints
+          content: websecure
+
+  - it: should reference the https-redirectscheme middleware
+    documentIndex: 0
+    asserts:
+      - contains:
+          path: spec.routes[0].middlewares
+          content:
+            name: https-redirectscheme
+            namespace: traefik
+
+  - it: should reference the TLS cert secret
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.tls.secretName
+          value: test-release-cert
+
+  - it: should set external-dns annotation
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: metadata.annotations["external-dns.alpha.kubernetes.io/target"]
+          value: k3s.internal.example.com
+
+  - it: should set homepage annotations
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: metadata.annotations["gethomepage.dev/enabled"]
+          value: "true"
+      - equal:
+          path: metadata.annotations["gethomepage.dev/group"]
+          value: services
+      - equal:
+          path: metadata.annotations["gethomepage.dev/icon"]
+          value: test-release.png
+      - equal:
+          path: metadata.annotations["gethomepage.dev/name"]
+          value: test-release
+
+  - it: should create a Certificate
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: Certificate
+      - equal:
+          path: apiVersion
+          value: cert-manager.io/v1
+
+  - it: should set the correct issuer
+    documentIndex: 1
+    asserts:
+      - equal:
+          path: spec.issuerRef
+          value:
+            name: letsencrypt-staging-issuer
+            kind: ClusterIssuer
+
+  - it: should set the correct DNS name on the certificate
+    documentIndex: 1
+    asserts:
+      - contains:
+          path: spec.dnsNames
+          content: test-release.k3s.internal.example.com
+
+  - it: should add extra middlewares to the default route
+    documentIndex: 0
+    set:
+      ingress.defaultRoute.extraMiddlewares:
+        - name: keycloak-openid
+          namespace: traefik
+    asserts:
+      - contains:
+          path: spec.routes[0].middlewares
+          content:
+            name: https-redirectscheme
+            namespace: traefik
+      - contains:
+          path: spec.routes[0].middlewares
+          content:
+            name: keycloak-openid
+            namespace: traefik
+
+  - it: should add extra routes
+    documentIndex: 0
+    set:
+      ingress.extraRoutes:
+        - match: "Host(`auth.internal.example.com`)"
+          certificateHostname: "auth.internal.example.com"
+    asserts:
+      - equal:
+          path: spec.routes[1].kind
+          value: Rule
+      - equal:
+          path: spec.routes[1].match
+          value: "Host(`auth.internal.example.com`)"
+      - equal:
+          path: spec.routes[1].services[0].name
+          value: test-release
+
+  - it: should add extra route DNS name to certificate
+    documentIndex: 1
+    set:
+      ingress.extraRoutes:
+        - match: "Host(`auth.internal.example.com`)"
+          certificateHostname: "auth.internal.example.com"
+    asserts:
+      - contains:
+          path: spec.dnsNames
+          content: test-release.k3s.internal.example.com
+      - contains:
+          path: spec.dnsNames
+          content: auth.internal.example.com
+
+  - it: should support tpl in extra route match
+    documentIndex: 0
+    set:
+      ingress.extraRoutes:
+        - match: "Host(`auth.internal.{{ .Values.topLevelDomain }}`)"
+          certificateHostname: "auth.internal.{{ .Values.topLevelDomain }}"
+    asserts:
+      - equal:
+          path: spec.routes[1].match
+          value: "Host(`auth.internal.example.com`)"
+
+  - it: should support tpl in extra route certificate hostname
+    documentIndex: 1
+    set:
+      ingress.extraRoutes:
+        - match: "Host(`auth.internal.{{ .Values.topLevelDomain }}`)"
+          certificateHostname: "auth.internal.{{ .Values.topLevelDomain }}"
+    asserts:
+      - contains:
+          path: spec.dnsNames
+          content: auth.internal.example.com
+
+  - it: should add custom middlewares to extra routes
+    documentIndex: 0
+    set:
+      ingress.extraRoutes:
+        - match: "Host(`auth.internal.example.com`)"
+          certificateHostname: "auth.internal.example.com"
+          customMiddlewares:
+            - name: https-redirectscheme
+              namespace: traefik
+    asserts:
+      - contains:
+          path: spec.routes[1].middlewares
+          content:
+            name: https-redirectscheme
+            namespace: traefik
+
+  - it: should not create ingress when disabled
+    set:
+      ingress.create: false
+    asserts:
+      - hasDocuments:
+          count: 0

@@ -235,12 +235,16 @@ This chart is opinionated for homelab use:
 
 ## Development
 
+A `Makefile` is provided in the repo root with common targets (`make lint`, `make test`, `make template`, `make validate`, `make all`).
+
+Unit tests require the helm-unittest plugin: `helm plugin install https://github.com/helm-unittest/helm-unittest`
+
 ```bash
 # Lint the chart
 helm lint charts/homelab-service
 
-# Render templates with default values
-helm template charts/homelab-service
+# Run unit tests
+helm unittest charts/homelab-service
 
 # Render with custom values
 helm template my-app ./charts/homelab-service --namespace test -f values.yaml

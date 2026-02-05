@@ -1,0 +1,145 @@
+suite: deployment
+templates:
+  - templates/deployment.yaml
+release:
+  name: test-release
+  namespace: default
+tests:
+  - it: should create a Deployment by default
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: apiVersion
+          value: apps/v1
+
+  - it: should set the release name as metadata name
+    asserts:
+      - equal:
+          path: metadata.name
+          value: test-release
+
+  - it: should use Recreate strategy
+    asserts:
+      - equal:
+          path: spec.strategy.type
+          value: Recreate
+
+  - it: should set replicas to 1
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1
+
+  - it: should set progressDeadlineSeconds to 600
+    asserts:
+      - equal:
+          path: spec.progressDeadlineSeconds
+          value: 600
+
+  - it: should set revisionHistoryLimit to 2
+    asserts:
+      - equal:
+          path: spec.revisionHistoryLimit
+          value: 2
+
+  - it: should use the default container image
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "ghcr.io/org/repo:tag"
+
+  - it: should set imagePullPolicy to IfNotPresent
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+
+  - it: should expose port 8080 named http
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: http
+            containerPort: 8080
+            protocol: TCP
+
+  - it: should set resource limits and requests
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+
+  - it: should mount config volume
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /config
+            name: config
+
+  - it: should set default env variables
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PUID
+            value: "5000"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PGID
+            value: "5000"
+
+  - it: should configure liveness and readiness probes
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+
+  - it: should reference the config PVC in volumes
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: config
+            persistentVolumeClaim:
+              claimName: config
+
+  - it: should include standard labels
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: test-release
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: test-release
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+
+  - it: should not create deployment when disabled
+    set:
+      deployment.create: false
+    asserts:
+      - hasDocuments:
+          count: 0

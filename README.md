@@ -27,17 +27,15 @@ See each chart's README for detailed configuration options.
 
 ## Development
 
+A `Makefile` is provided with common targets (`make lint`, `make test`, `make template`, `make validate`, `make all`).
+
+Unit tests require the helm-unittest plugin: `helm plugin install https://github.com/helm-unittest/helm-unittest`
+
 ### Rendering templates
 
 ```bash
-# With default values
-helm template charts/homelab-service
-
 # With test values
 helm template test-svc ./charts/homelab-service --namespace test --create-namespace --values test-values.yaml
-
-# Debug invalid YAML
-helm template test-svc ./charts/homelab-service --values test-values.yaml --debug
 ```
 
 ### Schema validation
