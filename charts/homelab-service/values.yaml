@@ -85,8 +85,16 @@ databases: []
   #   targetClusterNamespace: cnpg
   #   reclaimPolicy: retain
 
-customMiddleware:
-  definitions: []
+customMiddleware: {}
+  # definitions:
+  #   - apiVersion: traefik.io/v1alpha1
+  #     kind: Middleware
+  #     metadata:
+  #       name: "{{ $.Release.Name }}-headers"
+  #     spec:
+  #       headers:
+  #         customRequestHeaders:
+  #           X-Forwarded-Proto: https
 
 volumes:
   - name: config
@@ -130,8 +138,8 @@ serviceAccount:
   secret:
     create: false
 
-clusterRole:
-  rules: []
+clusterRole: {}
+  # rules: []
 
 clusterRoleBinding: {}
   # role: "{{ $.Release.Name }}"
