@@ -49,12 +49,18 @@ spec:
           ports:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- with .container.livenessProbe }}
           livenessProbe:
-            {{- toYaml .container.livenessProbe | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .container.readinessProbe }}
           readinessProbe:
-            {{- toYaml .container.readinessProbe | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .container.startupProbe }}
           startupProbe:
-            {{- toYaml .container.startupProbe | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .container.resources | nindent 12 }}
           {{- with .container.volumeMounts }}
