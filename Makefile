@@ -22,4 +22,4 @@ validate: template
 		/work/rendered.yaml
 	rm -f rendered.yaml
 
-all: lint test template
+all: lint test
