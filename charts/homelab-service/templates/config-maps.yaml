@@ -6,7 +6,7 @@ metadata:
 data:
 {{- range $map_item := $value.map_items }}
   {{ $map_item.name }}: |
-{{ $map_item.contents | indent 4 }}
+{{ tpl $map_item.contents $ | indent 4 }}
 {{- end }}
 ---
 {{- end }}
