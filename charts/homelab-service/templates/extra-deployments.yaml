@@ -34,7 +34,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
-      {{- with .securityContext }}
+      {{- with .podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -45,6 +45,10 @@ spec:
         - name: {{ include "service.name" $ }}
           image: {{ .container.image }}
           imagePullPolicy: {{ .container.imagePullPolicy }}
+          {{- with .container.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- with .container.ports }}
           ports:
             {{- toYaml . | nindent 12 }}

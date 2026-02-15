@@ -137,6 +137,58 @@ tests:
           path: metadata.labels["app.kubernetes.io/managed-by"]
           value: Helm
 
+  - it: should not set podSecurityContext by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.securityContext
+
+  - it: should set podSecurityContext when specified
+    set:
+      deployment.podSecurityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+
+  - it: should not set container securityContext by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].securityContext
+
+  - it: should set container securityContext when specified
+    set:
+      deployment.container.securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        readOnlyRootFilesystem: false
+        runAsNonRoot: true
+        privileged: false
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            privileged: false
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+
   - it: should not create deployment when disabled
     set:
       deployment.create: false

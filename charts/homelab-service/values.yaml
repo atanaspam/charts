@@ -11,18 +11,26 @@ deployment:
   replicaCount: 1
   # runtimeClassName: nvidia
   progressDeadlineSeconds: 600
-  securityContext: {}
-    # capabilities:
-    #   drop:
-    #   - ALL
-    # readOnlyRootFilesystem: true
-    # runAsNonRoot: true
-    # runAsUser: 1000
+  podSecurityContext: {}
+    # fsGroup: 5000
+    # fsGroupChangePolicy: OnRootMismatch
   container:
     image: "ghcr.io/org/repo:tag"
     imagePullPolicy: IfNotPresent
     command: []
     args: []
+    securityContext: {}
+      # allowPrivilegeEscalation: false
+      # capabilities:
+      #   drop:
+      #     - ALL
+      # readOnlyRootFilesystem: false
+      # runAsNonRoot: true
+      # privileged: false
+      # runAsUser: 5000
+      # runAsGroup: 5000
+      # seccompProfile:
+      #   type: RuntimeDefault
     ports:
       - name: http
         containerPort: 8080
