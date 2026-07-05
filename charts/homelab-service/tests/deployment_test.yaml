@@ -105,16 +105,14 @@ tests:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: 10
-            periodSeconds: 30
+            periodSeconds: 60
       - equal:
           path: spec.template.spec.containers[0].readinessProbe
           value:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: 10
-            periodSeconds: 30
+            periodSeconds: 60
 
   - it: should reference the config PVC in volumes
     asserts:
@@ -137,14 +135,14 @@ tests:
           path: metadata.labels["app.kubernetes.io/managed-by"]
           value: Helm
 
-  - it: should not set podSecurityContext by default
+  - it: should not set securityContext by default
     asserts:
       - notExists:
           path: spec.template.spec.securityContext
 
-  - it: should set podSecurityContext when specified
+  - it: should set securityContext when specified
     set:
-      deployment.podSecurityContext:
+      deployment.securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
     asserts:
