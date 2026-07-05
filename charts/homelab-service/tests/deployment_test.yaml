@@ -187,6 +187,25 @@ tests:
             seccompProfile:
               type: RuntimeDefault
 
+  - it: should not set lifecycle by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+
+  - it: should set lifecycle when specified
+    set:
+      deployment.container.lifecycle:
+        postStart:
+          exec:
+            command: ["sh", "-c", "echo hello"]
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle
+          value:
+            postStart:
+              exec:
+                command: ["sh", "-c", "echo hello"]
+
   - it: should not create deployment when disabled
     set:
       deployment.create: false
