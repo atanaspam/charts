@@ -44,13 +44,13 @@ deployment:
           secretKeyRef:
             name: "{{ $.Release.Name }}"
             key: TZ
-    startupProbe:
-      httpGet:
-        path: /
-        port: http
-      initialDelaySeconds: 10
-      periodSeconds: 30
-      failureThreshold: 3
+    # startupProbe:
+    #   httpGet:
+    #     path: /
+    #     port: http
+    #   initialDelaySeconds: 10
+    #   periodSeconds: 30
+    #   failureThreshold: 3
     livenessProbe:
       httpGet:
         path: /

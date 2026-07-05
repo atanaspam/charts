@@ -52,6 +52,10 @@ spec:
           ports:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- with .container.startupProbe }}
+          startupProbe:
+            {{- tpl (. | toYaml) $ | nindent 12 }}
+          {{- end }}
           livenessProbe:
             {{- tpl (.container.livenessProbe | toYaml) $ | nindent 12 }}
           readinessProbe:
