@@ -3,6 +3,16 @@ entries:
   homelab-service:
   - apiVersion: v2
     appVersion: 1.0.0
+    created: "2026-07-05T10:44:45.115673809Z"
+    description: A Helm chart for a generic Homelab Kubernetes service
+    digest: 52ecafeb8e0144cd914d7c48bc2d6755c9b9411bb08a3981c6e268d5371afd34
+    name: homelab-service
+    type: application
+    urls:
+    - https://github.com/atanaspam/charts/releases/download/homelab-service-0.42.0/homelab-service-0.42.0.tgz
+    version: 0.42.0
+  - apiVersion: v2
+    appVersion: 1.0.0
     created: "2026-07-05T09:52:53.993701031Z"
     description: A Helm chart for a generic Homelab Kubernetes service
     digest: 12f58fa19b0443f178632442650059432f14cd246bada9c4c37f65152a9f68f5
@@ -421,4 +431,4 @@ entries:
     urls:
     - https://github.com/atanaspam/charts/releases/download/homelab-service-0.1.0/homelab-service-0.1.0.tgz
     version: 0.1.0
-generated: "2026-07-05T09:52:53.993989718Z"
+generated: "2026-07-05T10:44:45.116043591Z"
