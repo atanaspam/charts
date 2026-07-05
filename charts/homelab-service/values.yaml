@@ -11,26 +11,22 @@ deployment:
   replicaCount: 1
   # runtimeClassName: nvidia
   progressDeadlineSeconds: 600
-  podSecurityContext: {}
-    # fsGroup: 5000
-    # fsGroupChangePolicy: OnRootMismatch
+  # Pod-level security context (spec.securityContext). Applies to all containers.
+  securityContext: {}
+    # runAsNonRoot: true
+    # supplementalGroups: [44, 109]
   container:
     image: "ghcr.io/org/repo:tag"
     imagePullPolicy: IfNotPresent
+    hostNetwork: false
+    dnsPolicy: Default
     command: []
     args: []
+    # Container-level security context (spec.containers[].securityContext).
     securityContext: {}
-      # allowPrivilegeEscalation: false
-      # capabilities:
-      #   drop:
-      #     - ALL
-      # readOnlyRootFilesystem: false
-      # runAsNonRoot: true
       # privileged: false
       # runAsUser: 5000
       # runAsGroup: 5000
-      # seccompProfile:
-      #   type: RuntimeDefault
     ports:
       - name: http
         containerPort: 8080
@@ -48,18 +44,23 @@ deployment:
           secretKeyRef:
             name: "{{ $.Release.Name }}"
             key: TZ
+    startupProbe:
+      httpGet:
+        path: /
+        port: http
+      initialDelaySeconds: 10
+      periodSeconds: 30
+      failureThreshold: 3
     livenessProbe:
       httpGet:
         path: /
         port: http
-      initialDelaySeconds: 10
-      periodSeconds: 30
+      periodSeconds: 60
     readinessProbe:
       httpGet:
         path: /
         port: http
-      initialDelaySeconds: 10
-      periodSeconds: 30
+      periodSeconds: 60
     resources:
       limits:
         cpu: 500m
