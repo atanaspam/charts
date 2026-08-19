@@ -38,12 +38,12 @@ spec:
       {{- if .runtimeClassName }}
       runtimeClassName: {{ .runtimeClassName }}
       {{- end }}
+      hostNetwork: {{ .container.hostNetwork }}
+      dnsPolicy: {{ .container.dnsPolicy }}
       containers:
         - name: {{ include "service.name" $ }}
           image: {{ .container.image }}
           imagePullPolicy: {{ .container.imagePullPolicy }}
-          hostNetwork: {{ .container.hostNetwork }}
-          dnsPolicy: {{ .container.dnsPolicy }}
           {{- with .container.securityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
