@@ -13,7 +13,7 @@ An opinionated Helm chart for deploying relatively simple applications (Deployme
 |---|---|
 | [Traefik](https://traefik.io/) | IngressRoute resources (`ingress.create`) |
 | [cert-manager](https://cert-manager.io/) | TLS certificates (`ingress.create`) |
-| [Vault Secrets Operator](https://developer.hashicorp.com/vault/docs/platform/k8s/vso) | VaultStaticSecret resources (`externalSecrets`) |
+| [External Secrets Operator](https://external-secrets.io/) | ExternalSecret resources (`externalSecrets`) |
 | [CloudNativePG](https://cloudnative-pg.io/) | Database resources (`databases`) |
 | [Prometheus Operator](https://prometheus-operator.dev/) | ServiceMonitor resources (`monitoring.serviceMonitor`) |
 | [external-dns](https://github.com/kubernetes-sigs/external-dns) | Automatic DNS records (`ingress.defaultRoute.externalDns`) |
@@ -92,13 +92,13 @@ ingress:
 
 ### Vault secrets
 
-Integrates with HashiCorp Vault via the Vault Secrets Operator. Secrets are synced from Vault KV-v2 into Kubernetes Secrets:
+Integrates with HashiCorp Vault via the External Secrets Operator. Secrets are synced from Vault KV-v2 (through the `vault-backend` ClusterSecretStore) into Kubernetes Secrets:
 
 ```yaml
 externalSecrets:
   - name: "{{ $.Release.Name }}"
     path: software/{{ $.Values.clusterName }}/{{ $.Release.Name }}
-    refreshAfter: 300s
+    refreshInterval: 300s
 ```
 
 ### CloudNativePG databases
@@ -230,7 +230,7 @@ This chart is opinionated for homelab use:
 
 - **Recreate strategy** instead of rolling updates — suitable for single-replica workloads without zero-downtime requirements
 - **Traefik IngressRoute** instead of standard Ingress — native Traefik CRD support with middleware chaining
-- **Vault VaultStaticSecret** instead of native Secrets — centralized secret management via HashiCorp Vault
+- **ExternalSecret** instead of native Secrets — centralized secret management via HashiCorp Vault + External Secrets Operator
 - **Revision history limit of 2** — conserves etcd storage in small clusters
 
 ## Development
