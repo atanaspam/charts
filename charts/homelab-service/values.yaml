@@ -19,7 +19,7 @@ deployment:
     image: "ghcr.io/org/repo:tag"
     imagePullPolicy: IfNotPresent
     hostNetwork: false
-    dnsPolicy: Default
+    dnsPolicy: ClusterFirst
     command: []
     args: []
     # Container-level security context (spec.containers[].securityContext).
