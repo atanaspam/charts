@@ -106,13 +106,17 @@ tests:
               path: /
               port: http
             periodSeconds: 60
+            failureThreshold: 5
+            timeoutSeconds: 5
       - equal:
           path: spec.template.spec.containers[0].readinessProbe
           value:
             httpGet:
               path: /
               port: http
-            periodSeconds: 60
+            periodSeconds: 5
+            failureThreshold: 5
+            timeoutSeconds: 5
 
   - it: should reference the config PVC in volumes
     asserts:
