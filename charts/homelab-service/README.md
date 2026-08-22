@@ -72,7 +72,7 @@ release subDomain topLevelDomain
 
 ### Traefik IngressRoute
 
-Creates a Traefik IngressRoute (not standard Ingress) with HTTPS via cert-manager. Supports extra middlewares (e.g., Keycloak/OAuth) and additional routes:
+Creates a Traefik IngressRoute (not standard Ingress) with HTTPS via cert-manager. Supports extra middlewares on the default route, and additional, separate IngressRoute objects for the same backend Service via `extraIngressRoutes`:
 
 ```yaml
 ingress:
@@ -85,23 +85,20 @@ ingress:
     extraMiddlewares:
       - name: keycloak-openid
         namespace: traefik
-  extraRoutes:
-    - match: "Host(`alt.internal.example.com`)"
-      certificateHostname: "alt.internal.example.com"
 ```
 
 #### TLS certificate modes (`ingress.tls.mode`)
 
 - **`wildcard`** (default) — no per-app `Certificate` is created. The IngressRoute's TLS is left
   empty (`tls: {}`), so it falls back to the cluster's Traefik `TLSStore` default certificate — a
-  single wildcard cert covering every app on that cluster. `extraRoutes` entries that set
-  `certificateHostname` still get their own dedicated `Certificate` (for hostnames outside the
-  cluster's own domain, e.g. `auth.example.com`), and the IngressRoute's `tls.secretName` is set
-  to that cert — the default route's hostname still falls back to the TLSStore default via SNI.
-- **`perHost`** — the pre-wildcard-cert behavior: every app gets its own `Certificate` (default
-  hostname + any `extraRoutes` hostnames), and `tls.secretName` on the IngressRoute always points
-  to it. Set this per-cluster until that cluster's Traefik has a `TLSStore` default certificate
-  configured.
+  single wildcard cert covering every app on that cluster. `extraIngressRoutes` entries that set
+  `certificateHostname` still get a `Certificate` of their own (for hostnames outside the
+  cluster's own domain, e.g. `auth.example.com`, or outside whichever tier's wildcard covers
+  them), and that IngressRoute's `tls.secretName` is set accordingly — the default route's
+  hostname still falls back to the TLSStore default via SNI.
+- **`perHost`** — the pre-wildcard-cert behavior: every app gets its own `Certificate`, and
+  `tls.secretName` on the IngressRoute always points to it. Set this per-cluster until that
+  cluster's Traefik has a `TLSStore` default certificate configured.
 
 ### Vault secrets
 

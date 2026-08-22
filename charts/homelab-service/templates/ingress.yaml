@@ -1,78 +1,112 @@
 {{- if .Values.ingress.create }}
+{{- $root := . }}
 {{- $wildcardMode := eq .Values.ingress.tls.mode "wildcard" }}
-{{- $extraCertHosts := list }}
-{{- range .Values.ingress.extraRoutes }}
+
+{{/* Normalise the default route + every extraIngressRoutes entry into one list, so a single
+     loop below renders every IngressRoute object the same way. The default entry additionally
+     gets the app's external-dns/homepage annotations. Everything in extraIngressRoutes gets its
+     own separate object. */}}
+{{- $defaultRoute := dict "name" (include "service.name" .) "labels" .Values.ingress.labels "isDefault" true }}
+{{- $allIngressRoutes := list $defaultRoute }}
+{{- range .Values.extraIngressRoutes }}
+  {{- $certHost := "" }}
   {{- if .certificateHostname }}
-    {{- $extraCertHosts = append $extraCertHosts (tpl .certificateHostname $) }}
+    {{- $certHost = tpl .certificateHostname $root }}
+  {{- end }}
+  {{- $allIngressRoutes = append $allIngressRoutes (dict
+        "name" (tpl .name $root)
+        "labels" .labels
+        "isDefault" false
+        "match" (tpl .match $root)
+        "middlewares" .middlewares
+        "certificateHostname" $certHost
+      ) }}
+{{- end }}
+
+{{/* Hostnames (from extraIngressRoutes only - the default route never has more than its own
+     single hostname) that need their own explicit SAN on the shared per-app Certificate. */}}
+{{- $extraCertHosts := list }}
+{{- range .Values.extraIngressRoutes }}
+  {{- if .certificateHostname }}
+    {{- $extraCertHosts = append $extraCertHosts (tpl .certificateHostname $root) }}
   {{- end }}
 {{- end }}
-{{- $needsCertificate := or (not $wildcardMode) (gt (len $extraCertHosts) 0) }}
+{{- $anyCertNeeded := or (not $wildcardMode) (gt (len $extraCertHosts) 0) }}
+
+{{- range $index, $routeItem := $allIngressRoutes }}
+{{- if $index }}
+---
+{{- end }}
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: {{ include "service.name" . }}
-  namespace: {{ .Release.Namespace }}
+  name: {{ $routeItem.name }}
+  namespace: {{ $root.Release.Namespace }}
   annotations:
-    {{- if .Values.ingress.defaultRoute.externalDns.enabled }}
-    external-dns.alpha.kubernetes.io/target: {{ include "cluster.fqdn" . }}
+    {{- if and $routeItem.isDefault $root.Values.ingress.defaultRoute.externalDns.enabled }}
+    external-dns.alpha.kubernetes.io/target: {{ include "cluster.fqdn" $root }}
     {{- end }}
     kubernetes.io/ingress.class: traefik
-    {{- if .Values.homepage.enabled }}
-      {{- include "ingress.homepageAnnotations" . | nindent 4 }}
+    {{- if and $routeItem.isDefault $root.Values.homepage.enabled }}
+      {{- include "ingress.homepageAnnotations" $root | nindent 4 }}
     {{- end }}
   labels:
     app.kubernetes.io/component: backend
-    {{- include "service.labels" . | nindent 4 }}
+    {{- include "service.labels" $root | nindent 4 }}
+    {{- with $routeItem.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   entryPoints:
     - websecure
   routes:
+    {{- if $routeItem.isDefault }}
     - kind: Rule
-      match: {{ printf "Host(`%s.%s`)" (include "service.name" .) (include "cluster.fqdn" .) }}
+      match: {{ printf "Host(`%s.%s`)" (include "service.name" $root) (include "cluster.fqdn" $root) }}
       middlewares:
         - name: https-redirectscheme
           namespace: traefik
-        {{- if .Values.ingress.defaultRoute.extraMiddlewares }}
-        {{- tpl (.Values.ingress.defaultRoute.extraMiddlewares | toYaml) . | nindent 8 }}
+        {{- if $root.Values.ingress.defaultRoute.extraMiddlewares }}
+        {{- tpl ($root.Values.ingress.defaultRoute.extraMiddlewares | toYaml) $root | nindent 8 }}
         {{- end }}
       services:
       - kind: Service
-        name: {{ include "service.name" $ }}
-        namespace: {{ $.Release.Namespace }}
+        name: {{ include "service.name" $root }}
+        namespace: {{ $root.Release.Namespace }}
         passHostHeader: true
-        {{- range $port := $.Values.service.ports }}
+        {{- range $port := $root.Values.service.ports }}
           {{- if eq $port.name "http" }}
         port: {{ $port.port }}
           {{- end }}
         {{- end }}
-    {{- range .Values.ingress.extraRoutes }}
+    {{- else }}
     - kind: Rule
-      match: {{  printf "%s" (tpl .match $) }}
-      {{- if .customMiddlewares }}
+      match: {{ $routeItem.match }}
+      {{- with $routeItem.middlewares }}
       middlewares:
-        {{- range .customMiddlewares }}
-      - name: {{ .name }}
-        namespace: {{ .namespace }}
-        {{- end }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       services:
       - kind: Service
-        name: {{ include "service.name" $ }}
-        namespace: {{ $.Release.Namespace }}
+        name: {{ include "service.name" $root }}
+        namespace: {{ $root.Release.Namespace }}
         passHostHeader: true
-        {{- range $port := $.Values.service.ports }}
+        {{- range $port := $root.Values.service.ports }}
           {{- if eq $port.name "http" }}
         port: {{ $port.port }}
           {{- end }}
         {{- end }}
     {{- end }}
-  {{- if $needsCertificate }}
+  {{- $needsSecretName := or (not $wildcardMode) $routeItem.certificateHostname }}
+  {{- if $needsSecretName }}
   tls:
-    secretName: {{ include "service.name" . }}-cert
+    secretName: {{ include "service.name" $root }}-cert
   {{- else }}
   tls: {}
   {{- end }}
-{{- if (and .Values.ingress.issuer $needsCertificate) }}
+{{- end }}
+
+{{- if (and .Values.ingress.issuer $anyCertNeeded) }}
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate

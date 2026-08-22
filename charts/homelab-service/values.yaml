@@ -81,18 +81,14 @@ ingress:
     mode: wildcard
   issuer:
     name: letsencrypt-staging-issuer
+  labels:
+    exposure: internal
   defaultRoute:
     externalDns:
       enabled: true
     extraMiddlewares: []
     #  - name: keycloak-openid
     #    namespace: traefik
-  extraRoutes: []
-    # - match: "Host(`{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}`)"
-    #   certificateHostname: "{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}"
-    #   customMiddlewares:
-    #     - name: https-redirectscheme
-    #       namespace: traefik
 
 databases: []
   # - name: "{{ $.Release.Name }}"
@@ -184,5 +180,15 @@ monitoring:
     apiKeySecretName: "api_key"
 
 extraDeployments: []
+
+extraIngressRoutes: []
+  # - name: "{{ include \"service.name\" . }}-external"
+  #   labels:
+  #     exposure: external
+  #   match: "Host(`service.k3s.example.com`)"
+  #   certificateHostname: "service.k3s.example.com"
+  #   middlewares:
+  #     - name: middleware-name
+  #       namespace: traefik
 
 extraObjects: []
