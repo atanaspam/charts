@@ -77,6 +77,8 @@ deployment:
 
 ingress:
   create: true
+  tls:
+    mode: wildcard
   issuer:
     name: letsencrypt-staging-issuer
   defaultRoute:

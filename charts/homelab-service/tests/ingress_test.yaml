@@ -5,10 +5,10 @@ release:
   name: test-release
   namespace: default
 tests:
-  - it: should create an IngressRoute and Certificate
+  - it: should create only an IngressRoute in wildcard mode (default)
     asserts:
       - hasDocuments:
-          count: 2
+          count: 1
 
   - it: should create an IngressRoute
     documentIndex: 0
@@ -42,12 +42,12 @@ tests:
             name: https-redirectscheme
             namespace: traefik
 
-  - it: should reference the TLS cert secret
+  - it: should not set a TLS secretName in wildcard mode
     documentIndex: 0
     asserts:
       - equal:
-          path: spec.tls.secretName
-          value: test-release-cert
+          path: spec.tls
+          value: {}
 
   - it: should set external-dns annotation
     documentIndex: 0
@@ -71,31 +71,6 @@ tests:
       - equal:
           path: metadata.annotations["gethomepage.dev/name"]
           value: test-release
-
-  - it: should create a Certificate
-    documentIndex: 1
-    asserts:
-      - isKind:
-          of: Certificate
-      - equal:
-          path: apiVersion
-          value: cert-manager.io/v1
-
-  - it: should set the correct issuer
-    documentIndex: 1
-    asserts:
-      - equal:
-          path: spec.issuerRef
-          value:
-            name: letsencrypt-staging-issuer
-            kind: ClusterIssuer
-
-  - it: should set the correct DNS name on the certificate
-    documentIndex: 1
-    asserts:
-      - contains:
-          path: spec.dnsNames
-          content: test-release.k3s.internal.example.com
 
   - it: should add extra middlewares to the default route
     documentIndex: 0
@@ -132,19 +107,32 @@ tests:
           path: spec.routes[1].services[0].name
           value: test-release
 
-  - it: should add extra route DNS name to certificate
+  - it: should still create a Certificate in wildcard mode when an extra route needs its own hostname
     documentIndex: 1
     set:
       ingress.extraRoutes:
         - match: "Host(`auth.internal.example.com`)"
           certificateHostname: "auth.internal.example.com"
     asserts:
-      - contains:
-          path: spec.dnsNames
-          content: test-release.k3s.internal.example.com
+      - isKind:
+          of: Certificate
       - contains:
           path: spec.dnsNames
           content: auth.internal.example.com
+      - notContains:
+          path: spec.dnsNames
+          content: test-release.k3s.internal.example.com
+
+  - it: should reference that Certificate's secret on the IngressRoute
+    documentIndex: 0
+    set:
+      ingress.extraRoutes:
+        - match: "Host(`auth.internal.example.com`)"
+          certificateHostname: "auth.internal.example.com"
+    asserts:
+      - equal:
+          path: spec.tls.secretName
+          value: test-release-cert
 
   - it: should support tpl in extra route match
     documentIndex: 0
@@ -190,3 +178,66 @@ tests:
     asserts:
       - hasDocuments:
           count: 0
+
+  # perHost mode — pre-wildcard-cert behavior, kept as an explicit override
+  - it: should create an IngressRoute and Certificate in perHost mode
+    set:
+      ingress.tls.mode: perHost
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: should set the TLS cert secret in perHost mode
+    documentIndex: 0
+    set:
+      ingress.tls.mode: perHost
+    asserts:
+      - equal:
+          path: spec.tls.secretName
+          value: test-release-cert
+
+  - it: should create a Certificate in perHost mode
+    documentIndex: 1
+    set:
+      ingress.tls.mode: perHost
+    asserts:
+      - isKind:
+          of: Certificate
+      - equal:
+          path: apiVersion
+          value: cert-manager.io/v1
+
+  - it: should set the correct issuer in perHost mode
+    documentIndex: 1
+    set:
+      ingress.tls.mode: perHost
+    asserts:
+      - equal:
+          path: spec.issuerRef
+          value:
+            name: letsencrypt-staging-issuer
+            kind: ClusterIssuer
+
+  - it: should set the correct DNS name on the certificate in perHost mode
+    documentIndex: 1
+    set:
+      ingress.tls.mode: perHost
+    asserts:
+      - contains:
+          path: spec.dnsNames
+          content: test-release.k3s.internal.example.com
+
+  - it: should include extra route hostnames on the certificate in perHost mode
+    documentIndex: 1
+    set:
+      ingress.tls.mode: perHost
+      ingress.extraRoutes:
+        - match: "Host(`auth.internal.example.com`)"
+          certificateHostname: "auth.internal.example.com"
+    asserts:
+      - contains:
+          path: spec.dnsNames
+          content: test-release.k3s.internal.example.com
+      - contains:
+          path: spec.dnsNames
+          content: auth.internal.example.com
