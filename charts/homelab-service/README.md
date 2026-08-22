@@ -90,6 +90,19 @@ ingress:
       certificateHostname: "alt.internal.example.com"
 ```
 
+#### TLS certificate modes (`ingress.tls.mode`)
+
+- **`wildcard`** (default) — no per-app `Certificate` is created. The IngressRoute's TLS is left
+  empty (`tls: {}`), so it falls back to the cluster's Traefik `TLSStore` default certificate — a
+  single wildcard cert covering every app on that cluster. `extraRoutes` entries that set
+  `certificateHostname` still get their own dedicated `Certificate` (for hostnames outside the
+  cluster's own domain, e.g. `auth.example.com`), and the IngressRoute's `tls.secretName` is set
+  to that cert — the default route's hostname still falls back to the TLSStore default via SNI.
+- **`perHost`** — the pre-wildcard-cert behavior: every app gets its own `Certificate` (default
+  hostname + any `extraRoutes` hostnames), and `tls.secretName` on the IngressRoute always points
+  to it. Set this per-cluster until that cluster's Traefik has a `TLSStore` default certificate
+  configured.
+
 ### Vault secrets
 
 Integrates with HashiCorp Vault via the External Secrets Operator. Secrets are synced from Vault KV-v2 (through the `vault-backend` ClusterSecretStore) into Kubernetes Secrets:

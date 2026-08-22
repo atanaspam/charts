@@ -1,4 +1,12 @@
 {{- if .Values.ingress.create }}
+{{- $wildcardMode := eq .Values.ingress.tls.mode "wildcard" }}
+{{- $extraCertHosts := list }}
+{{- range .Values.ingress.extraRoutes }}
+  {{- if .certificateHostname }}
+    {{- $extraCertHosts = append $extraCertHosts (tpl .certificateHostname $) }}
+  {{- end }}
+{{- end }}
+{{- $needsCertificate := or (not $wildcardMode) (gt (len $extraCertHosts) 0) }}
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
@@ -58,10 +66,14 @@ spec:
           {{- end }}
         {{- end }}
     {{- end }}
+  {{- if $needsCertificate }}
   tls:
     secretName: {{ include "service.name" . }}-cert
+  {{- else }}
+  tls: {}
+  {{- end }}
+{{- if (and .Values.ingress.issuer $needsCertificate) }}
 ---
-{{- if (and .Values.ingress.create .Values.ingress.issuer) }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -75,9 +87,11 @@ spec:
   additionalOutputFormats:
   - type: CombinedPEM
   dnsNames:
+  {{- if not $wildcardMode }}
   - {{  printf "%s.%s" (include "service.name" .) (include "cluster.fqdn" .) }}
-  {{- range .Values.ingress.extraRoutes }}
-  - {{ tpl .certificateHostname $ }}
+  {{- end }}
+  {{- range $extraCertHosts }}
+  - {{ . }}
   {{- end }}
 {{- end }}
 {{- end }}
