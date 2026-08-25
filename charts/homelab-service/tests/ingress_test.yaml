@@ -90,94 +90,124 @@ tests:
             name: keycloak-openid
             namespace: traefik
 
-  - it: should add extra routes
-    documentIndex: 0
-    set:
-      ingress.extraRoutes:
-        - match: "Host(`auth.internal.example.com`)"
-          certificateHostname: "auth.internal.example.com"
-    asserts:
-      - equal:
-          path: spec.routes[1].kind
-          value: Rule
-      - equal:
-          path: spec.routes[1].match
-          value: "Host(`auth.internal.example.com`)"
-      - equal:
-          path: spec.routes[1].services[0].name
-          value: test-release
-
-  - it: should still create a Certificate in wildcard mode when an extra route needs its own hostname
-    documentIndex: 1
-    set:
-      ingress.extraRoutes:
-        - match: "Host(`auth.internal.example.com`)"
-          certificateHostname: "auth.internal.example.com"
-    asserts:
-      - isKind:
-          of: Certificate
-      - contains:
-          path: spec.dnsNames
-          content: auth.internal.example.com
-      - notContains:
-          path: spec.dnsNames
-          content: test-release.k3s.internal.example.com
-
-  - it: should reference that Certificate's secret on the IngressRoute
-    documentIndex: 0
-    set:
-      ingress.extraRoutes:
-        - match: "Host(`auth.internal.example.com`)"
-          certificateHostname: "auth.internal.example.com"
-    asserts:
-      - equal:
-          path: spec.tls.secretName
-          value: test-release-cert
-
-  - it: should support tpl in extra route match
-    documentIndex: 0
-    set:
-      ingress.extraRoutes:
-        - match: "Host(`auth.internal.{{ .Values.topLevelDomain }}`)"
-          certificateHostname: "auth.internal.{{ .Values.topLevelDomain }}"
-    asserts:
-      - equal:
-          path: spec.routes[1].match
-          value: "Host(`auth.internal.example.com`)"
-
-  - it: should support tpl in extra route certificate hostname
-    documentIndex: 1
-    set:
-      ingress.extraRoutes:
-        - match: "Host(`auth.internal.{{ .Values.topLevelDomain }}`)"
-          certificateHostname: "auth.internal.{{ .Values.topLevelDomain }}"
-    asserts:
-      - contains:
-          path: spec.dnsNames
-          content: auth.internal.example.com
-
-  - it: should add custom middlewares to extra routes
-    documentIndex: 0
-    set:
-      ingress.extraRoutes:
-        - match: "Host(`auth.internal.example.com`)"
-          certificateHostname: "auth.internal.example.com"
-          customMiddlewares:
-            - name: https-redirectscheme
-              namespace: traefik
-    asserts:
-      - contains:
-          path: spec.routes[1].middlewares
-          content:
-            name: https-redirectscheme
-            namespace: traefik
-
   - it: should not create ingress when disabled
     set:
       ingress.create: false
     asserts:
       - hasDocuments:
           count: 0
+
+  # extraIngressRoutes — dual exposure: a separate IngressRoute object per entry (not bundled
+  # into the default route's), since each Traefik instance's labelSelector scopes per-object.
+  - it: should render a separate IngressRoute per extraIngressRoutes entry
+    documentIndex: 1
+    set:
+      extraIngressRoutes:
+        - name: "{{ include \"service.name\" . }}-external"
+          labels:
+            exposure: external
+          match: "Host(`test-release.k3s.example.com`)"
+    asserts:
+      - isKind:
+          of: IngressRoute
+      - equal:
+          path: metadata.name
+          value: test-release-external
+      - equal:
+          path: metadata.labels.exposure
+          value: external
+      - equal:
+          path: spec.routes[0].match
+          value: "Host(`test-release.k3s.example.com`)"
+
+  - it: should render two documents total for one extraIngressRoutes entry
+    set:
+      extraIngressRoutes:
+        - name: "{{ include \"service.name\" . }}-external"
+          labels:
+            exposure: external
+          match: "Host(`test-release.k3s.example.com`)"
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: should not set a TLS secretName on an extraIngressRoutes entry with no certificateHostname
+    documentIndex: 1
+    set:
+      extraIngressRoutes:
+        - name: "{{ include \"service.name\" . }}-external"
+          labels:
+            exposure: external
+          match: "Host(`test-release.k3s.example.com`)"
+    asserts:
+      - equal:
+          path: spec.tls
+          value: {}
+
+  - it: should render extra route middlewares when set
+    documentIndex: 1
+    set:
+      extraIngressRoutes:
+        - name: "{{ include \"service.name\" . }}-external"
+          labels:
+            exposure: external
+          match: "Host(`test-release.k3s.example.com`)"
+          middlewares:
+            - name: keycloak-openid
+              namespace: traefik
+    asserts:
+      - contains:
+          path: spec.routes[0].middlewares
+          content:
+            name: keycloak-openid
+            namespace: traefik
+
+  - it: should not touch the default IngressRoute's tls when an unrelated extraIngressRoutes entry needs its own cert
+    documentIndex: 0
+    set:
+      extraIngressRoutes:
+        - name: "{{ include \"service.name\" . }}-external"
+          labels:
+            exposure: external
+          match: "Host(`test-release.k3s.example.com`)"
+          certificateHostname: "test-release.k3s.example.com"
+    asserts:
+      - equal:
+          path: spec.tls
+          value: {}
+
+  - it: should set tls.secretName on an extraIngressRoutes entry that declares certificateHostname
+    documentIndex: 1
+    set:
+      extraIngressRoutes:
+        - name: "{{ include \"service.name\" . }}-external"
+          labels:
+            exposure: external
+          match: "Host(`test-release.k3s.example.com`)"
+          certificateHostname: "test-release.k3s.example.com"
+    asserts:
+      - equal:
+          path: spec.tls.secretName
+          value: test-release-cert
+
+  - it: should create a shared Certificate scoped to just the extra hostname
+    documentIndex: 2
+    set:
+      extraIngressRoutes:
+        - name: "{{ include \"service.name\" . }}-external"
+          labels:
+            exposure: external
+          match: "Host(`test-release.k3s.example.com`)"
+          certificateHostname: "test-release.k3s.example.com"
+    asserts:
+      - isKind:
+          of: Certificate
+      - contains:
+          path: spec.dnsNames
+          content: test-release.k3s.example.com
+      - notContains:
+          path: spec.dnsNames
+          content: test-release.k3s.internal.example.com
 
   # perHost mode — pre-wildcard-cert behavior, kept as an explicit override
   - it: should create an IngressRoute and Certificate in perHost mode
@@ -227,17 +257,20 @@ tests:
           path: spec.dnsNames
           content: test-release.k3s.internal.example.com
 
-  - it: should include extra route hostnames on the certificate in perHost mode
-    documentIndex: 1
+  - it: should include extraIngressRoutes hostnames on the certificate in perHost mode
+    documentIndex: 2
     set:
       ingress.tls.mode: perHost
-      ingress.extraRoutes:
-        - match: "Host(`auth.internal.example.com`)"
-          certificateHostname: "auth.internal.example.com"
+      extraIngressRoutes:
+        - name: "{{ include \"service.name\" . }}-external"
+          labels:
+            exposure: external
+          match: "Host(`test-release.k3s.example.com`)"
+          certificateHostname: "test-release.k3s.example.com"
     asserts:
       - contains:
           path: spec.dnsNames
           content: test-release.k3s.internal.example.com
       - contains:
           path: spec.dnsNames
-          content: auth.internal.example.com
+          content: test-release.k3s.example.com
