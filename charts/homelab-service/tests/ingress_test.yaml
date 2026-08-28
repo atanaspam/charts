@@ -49,6 +49,15 @@ tests:
           path: spec.tls
           value: {}
 
+  - it: should set a TLS secretName in perHost mode
+    documentIndex: 0
+    set:
+      certificate.tls.mode: perHost
+    asserts:
+      - equal:
+          path: spec.tls.secretName
+          value: test-release-cert
+
   - it: should set external-dns annotation
     documentIndex: 0
     asserts:
@@ -72,12 +81,42 @@ tests:
           path: metadata.annotations["gethomepage.dev/name"]
           value: test-release
 
-  - it: should add extra middlewares to the default route
-    documentIndex: 0
+  - it: should not set the external-dns annotation when not requested on the route
     set:
-      ingress.defaultRoute.extraMiddlewares:
-        - name: keycloak-openid
-          namespace: traefik
+      ingressRoutes:
+        - name: "{{ include \"service.name\" . }}"
+          match: "Host(`{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}`)"
+          middlewares:
+            - name: https-redirectscheme
+              namespace: traefik
+    documentIndex: 0
+    asserts:
+      - notExists:
+          path: metadata.annotations["external-dns.alpha.kubernetes.io/target"]
+
+  - it: should not set homepage annotations when not requested on the route
+    set:
+      ingressRoutes:
+        - name: "{{ include \"service.name\" . }}"
+          match: "Host(`{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}`)"
+          externalDns:
+            enabled: true
+    documentIndex: 0
+    asserts:
+      - notExists:
+          path: metadata.annotations["gethomepage.dev/enabled"]
+
+  - it: should add extra middlewares to a route by listing them alongside https-redirectscheme
+    set:
+      ingressRoutes:
+        - name: "{{ include \"service.name\" . }}"
+          match: "Host(`{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}`)"
+          middlewares:
+            - name: https-redirectscheme
+              namespace: traefik
+            - name: keycloak-openid
+              namespace: traefik
+    documentIndex: 0
     asserts:
       - contains:
           path: spec.routes[0].middlewares
@@ -90,19 +129,97 @@ tests:
             name: keycloak-openid
             namespace: traefik
 
-  - it: should not create ingress when disabled
+  - it: should not create ingress when the route list is empty
     set:
-      ingress.create: false
+      ingressRoutes: []
     asserts:
       - hasDocuments:
           count: 0
 
-  # extraIngressRoutes — dual exposure: a separate IngressRoute object per entry (not bundled
-  # into the default route's), since each Traefik instance's labelSelector scopes per-object.
-  - it: should render a separate IngressRoute per extraIngressRoutes entry
+  - it: should default the backend to this release's own Service
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.routes[0].services[0]
+          value:
+            kind: Service
+            name: test-release
+            namespace: default
+            passHostHeader: true
+            port: 80
+
+  - it: should render only one route when only one entry is given with no homepage/external-dns
+    set:
+      ingressRoutes:
+        - name: it-tools
+          match: "Host(`it-tools.example.com`)"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: IngressRoute
+      - equal:
+          path: metadata.name
+          value: it-tools
+
+  - it: should point a route at an external backendService
+    set:
+      ingressRoutes:
+        - name: "{{ include \"service.name\" . }}"
+          match: "Host(`{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}`)"
+          backendService:
+            name: some-other-service
+            namespace: some-other-namespace
+            port: 443
+            scheme: https
+            serversTransport: some-other-service
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.routes[0].services[0]
+          value:
+            kind: Service
+            name: some-other-service
+            namespace: some-other-namespace
+            passHostHeader: true
+            port: 443
+            scheme: https
+            serversTransport: some-other-service
+
+  - it: should point a second route at an external backendService
     documentIndex: 1
     set:
-      extraIngressRoutes:
+      ingressRoutes:
+        - name: "{{ include \"service.name\" . }}"
+          match: "Host(`{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}`)"
+        - name: it-tools
+          match: "Host(`it-tools.example.com`)"
+          backendService:
+            name: gsw130-k3s1-origin
+            namespace: egress
+            port: 443
+            scheme: https
+            serversTransport: gsw130-k3s1-origin
+    asserts:
+      - equal:
+          path: spec.routes[0].services[0]
+          value:
+            kind: Service
+            name: gsw130-k3s1-origin
+            namespace: egress
+            passHostHeader: true
+            port: 443
+            scheme: https
+            serversTransport: gsw130-k3s1-origin
+
+  # dual exposure — a separate IngressRoute object per entry (not bundled into one), since each
+  # Traefik instance's labelSelector scopes per-object.
+  - it: should render a separate IngressRoute per extra route entry
+    documentIndex: 1
+    set:
+      ingressRoutes:
+        - name: "{{ include \"service.name\" . }}"
+          match: "Host(`{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}`)"
         - name: "{{ include \"service.name\" . }}-external"
           labels:
             exposure: external
@@ -120,9 +237,11 @@ tests:
           path: spec.routes[0].match
           value: "Host(`test-release.k3s.example.com`)"
 
-  - it: should render two documents total for one extraIngressRoutes entry
+  - it: should render two documents total for two route entries
     set:
-      extraIngressRoutes:
+      ingressRoutes:
+        - name: "{{ include \"service.name\" . }}"
+          match: "Host(`{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}`)"
         - name: "{{ include \"service.name\" . }}-external"
           labels:
             exposure: external
@@ -131,10 +250,12 @@ tests:
       - hasDocuments:
           count: 2
 
-  - it: should not set a TLS secretName on an extraIngressRoutes entry with no certificateHostname
+  - it: should not set a TLS secretName on an extra route with no certificateHostname
     documentIndex: 1
     set:
-      extraIngressRoutes:
+      ingressRoutes:
+        - name: "{{ include \"service.name\" . }}"
+          match: "Host(`{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}`)"
         - name: "{{ include \"service.name\" . }}-external"
           labels:
             exposure: external
@@ -147,7 +268,9 @@ tests:
   - it: should render extra route middlewares when set
     documentIndex: 1
     set:
-      extraIngressRoutes:
+      ingressRoutes:
+        - name: "{{ include \"service.name\" . }}"
+          match: "Host(`{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}`)"
         - name: "{{ include \"service.name\" . }}-external"
           labels:
             exposure: external
@@ -162,10 +285,12 @@ tests:
             name: keycloak-openid
             namespace: traefik
 
-  - it: should not touch the default IngressRoute's tls when an unrelated extraIngressRoutes entry needs its own cert
+  - it: should not touch the default IngressRoute's tls when an unrelated extra route needs its own cert
     documentIndex: 0
     set:
-      extraIngressRoutes:
+      ingressRoutes:
+        - name: "{{ include \"service.name\" . }}"
+          match: "Host(`{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}`)"
         - name: "{{ include \"service.name\" . }}-external"
           labels:
             exposure: external
@@ -176,10 +301,12 @@ tests:
           path: spec.tls
           value: {}
 
-  - it: should set tls.secretName on an extraIngressRoutes entry that declares certificateHostname
+  - it: should set tls.secretName on an extra route that declares certificateHostname
     documentIndex: 1
     set:
-      extraIngressRoutes:
+      ingressRoutes:
+        - name: "{{ include \"service.name\" . }}"
+          match: "Host(`{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}`)"
         - name: "{{ include \"service.name\" . }}-external"
           labels:
             exposure: external
@@ -189,88 +316,3 @@ tests:
       - equal:
           path: spec.tls.secretName
           value: test-release-cert
-
-  - it: should create a shared Certificate scoped to just the extra hostname
-    documentIndex: 2
-    set:
-      extraIngressRoutes:
-        - name: "{{ include \"service.name\" . }}-external"
-          labels:
-            exposure: external
-          match: "Host(`test-release.k3s.example.com`)"
-          certificateHostname: "test-release.k3s.example.com"
-    asserts:
-      - isKind:
-          of: Certificate
-      - contains:
-          path: spec.dnsNames
-          content: test-release.k3s.example.com
-      - notContains:
-          path: spec.dnsNames
-          content: test-release.k3s.internal.example.com
-
-  # perHost mode — pre-wildcard-cert behavior, kept as an explicit override
-  - it: should create an IngressRoute and Certificate in perHost mode
-    set:
-      ingress.tls.mode: perHost
-    asserts:
-      - hasDocuments:
-          count: 2
-
-  - it: should set the TLS cert secret in perHost mode
-    documentIndex: 0
-    set:
-      ingress.tls.mode: perHost
-    asserts:
-      - equal:
-          path: spec.tls.secretName
-          value: test-release-cert
-
-  - it: should create a Certificate in perHost mode
-    documentIndex: 1
-    set:
-      ingress.tls.mode: perHost
-    asserts:
-      - isKind:
-          of: Certificate
-      - equal:
-          path: apiVersion
-          value: cert-manager.io/v1
-
-  - it: should set the correct issuer in perHost mode
-    documentIndex: 1
-    set:
-      ingress.tls.mode: perHost
-    asserts:
-      - equal:
-          path: spec.issuerRef
-          value:
-            name: letsencrypt-staging-issuer
-            kind: ClusterIssuer
-
-  - it: should set the correct DNS name on the certificate in perHost mode
-    documentIndex: 1
-    set:
-      ingress.tls.mode: perHost
-    asserts:
-      - contains:
-          path: spec.dnsNames
-          content: test-release.k3s.internal.example.com
-
-  - it: should include extraIngressRoutes hostnames on the certificate in perHost mode
-    documentIndex: 2
-    set:
-      ingress.tls.mode: perHost
-      extraIngressRoutes:
-        - name: "{{ include \"service.name\" . }}-external"
-          labels:
-            exposure: external
-          match: "Host(`test-release.k3s.example.com`)"
-          certificateHostname: "test-release.k3s.example.com"
-    asserts:
-      - contains:
-          path: spec.dnsNames
-          content: test-release.k3s.internal.example.com
-      - contains:
-          path: spec.dnsNames
-          content: test-release.k3s.example.com

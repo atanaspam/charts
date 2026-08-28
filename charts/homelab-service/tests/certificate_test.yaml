@@ -1,0 +1,91 @@
+suite: certificate
+templates:
+  - templates/certificate.yaml
+release:
+  name: test-release
+  namespace: default
+tests:
+  - it: should not create a Certificate in wildcard mode with no extra cert hosts
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not create a Certificate when issuer is null
+    set:
+      certificate.issuer: null
+      certificate.tls.mode: perHost
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create a Certificate in perHost mode
+    set:
+      certificate.tls.mode: perHost
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: Certificate
+      - equal:
+          path: apiVersion
+          value: cert-manager.io/v1
+
+  - it: should set the correct issuer in perHost mode
+    set:
+      certificate.tls.mode: perHost
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.issuerRef
+          value:
+            name: letsencrypt-staging-issuer
+            kind: ClusterIssuer
+
+  - it: should set the correct DNS name on the certificate in perHost mode
+    set:
+      certificate.tls.mode: perHost
+    documentIndex: 0
+    asserts:
+      - contains:
+          path: spec.dnsNames
+          content: test-release.k3s.internal.example.com
+
+  - it: should include extra route hostnames on the certificate in perHost mode
+    set:
+      certificate.tls.mode: perHost
+      ingressRoutes:
+        - name: "{{ include \"service.name\" . }}"
+          match: "Host(`{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}`)"
+        - name: "{{ include \"service.name\" . }}-external"
+          labels:
+            exposure: external
+          match: "Host(`test-release.k3s.example.com`)"
+          certificateHostname: "test-release.k3s.example.com"
+    documentIndex: 0
+    asserts:
+      - contains:
+          path: spec.dnsNames
+          content: test-release.k3s.internal.example.com
+      - contains:
+          path: spec.dnsNames
+          content: test-release.k3s.example.com
+
+  - it: should create a Certificate scoped to just the extra hostname in wildcard mode
+    set:
+      ingressRoutes:
+        - name: "{{ include \"service.name\" . }}"
+          match: "Host(`{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}`)"
+        - name: "{{ include \"service.name\" . }}-external"
+          labels:
+            exposure: external
+          match: "Host(`test-release.k3s.example.com`)"
+          certificateHostname: "test-release.k3s.example.com"
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: Certificate
+      - contains:
+          path: spec.dnsNames
+          content: test-release.k3s.example.com
+      - notContains:
+          path: spec.dnsNames
+          content: test-release.k3s.internal.example.com

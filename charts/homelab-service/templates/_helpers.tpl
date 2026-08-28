@@ -62,6 +62,13 @@ gethomepage.dev/instance: {{ .Values.clusterName }}
 {{- end }}
 
 {{/*
+The chart's own Service http-named port
+*/}}
+{{- define "service.httpPort" -}}
+{{- range .Values.service.ports }}{{- if eq .name "http" }}{{- .port }}{{- end }}{{- end }}
+{{- end }}
+
+{{/*
 Renders a complete tree, even values that contains template.
 */}}
 {{- define "service.render" -}}
