@@ -75,20 +75,33 @@ deployment:
     lifecycle: {}
   initContainers: []
 
-ingress:
-  create: true
+certificate:
   tls:
     mode: wildcard
   issuer:
     name: letsencrypt-staging-issuer
-  labels:
-    exposure: internal
-  defaultRoute:
+
+ingressRoutes:
+  - name: "{{ include \"service.name\" . }}"
+    match: "Host(`{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}`)"
+    labels:
+      exposure: internal
+    homepage: true
     externalDns:
       enabled: true
-    extraMiddlewares: []
-    #  - name: keycloak-openid
-    #    namespace: traefik
+    middlewares:
+      - name: https-redirectscheme
+        namespace: traefik
+    backendService: {}
+  # - name: "{{ include \"service.name\" . }}-external"
+  #   labels:
+  #     exposure: external
+  #   match: "Host(`service.k3s.example.com`)"
+  #   certificateHostname: "service.k3s.example.com"
+  #   middlewares:
+  #     - name: middleware-name
+  #       namespace: traefik
+  #   backendService: {}
 
 databases: []
   # - name: "{{ $.Release.Name }}"
@@ -121,6 +134,7 @@ persistentVolumeClaims:
     annotations: {}
 
 service:
+  create: true
   type: ClusterIP
   ports:
     - port: 80
@@ -180,15 +194,5 @@ monitoring:
     apiKeySecretName: "api_key"
 
 extraDeployments: []
-
-extraIngressRoutes: []
-  # - name: "{{ include \"service.name\" . }}-external"
-  #   labels:
-  #     exposure: external
-  #   match: "Host(`service.k3s.example.com`)"
-  #   certificateHostname: "service.k3s.example.com"
-  #   middlewares:
-  #     - name: middleware-name
-  #       namespace: traefik
 
 extraObjects: []

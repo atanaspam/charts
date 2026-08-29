@@ -11,12 +11,12 @@ An opinionated Helm chart for deploying relatively simple applications (Deployme
 
 | Dependency | Required for |
 |---|---|
-| [Traefik](https://traefik.io/) | IngressRoute resources (`ingress.create`) |
-| [cert-manager](https://cert-manager.io/) | TLS certificates (`ingress.create`) |
+| [Traefik](https://traefik.io/) | IngressRoute resources (`ingressRoutes`) |
+| [cert-manager](https://cert-manager.io/) | TLS certificates (`certificate.issuer`) |
 | [External Secrets Operator](https://external-secrets.io/) | ExternalSecret resources (`externalSecrets`) |
 | [CloudNativePG](https://cloudnative-pg.io/) | Database resources (`databases`) |
 | [Prometheus Operator](https://prometheus-operator.dev/) | ServiceMonitor resources (`monitoring.serviceMonitor`) |
-| [external-dns](https://github.com/kubernetes-sigs/external-dns) | Automatic DNS records (`ingress.defaultRoute.externalDns`) |
+| [external-dns](https://github.com/kubernetes-sigs/external-dns) | Automatic DNS records (`ingressRoutes[].externalDns`) |
 | [Homepage](https://gethomepage.dev/) | Dashboard integration (`homepage`) |
 
 ## Installation
@@ -51,10 +51,16 @@ deployment:
         containerPort: 8080
         protocol: TCP
 
-ingress:
-  create: true
+certificate:
   issuer:
     name: letsencrypt-prod-issuer
+
+ingressRoutes:
+  - name: "{{ include \"service.name\" . }}"
+    match: "Host(`{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}`)"
+    middlewares:
+      - name: https-redirectscheme
+        namespace: traefik
 ```
 
 This creates a Deployment, Service, Traefik IngressRoute, and cert-manager Certificate. The application is accessible at `my-app.internal.example.com`.
@@ -72,33 +78,58 @@ release subDomain topLevelDomain
 
 ### Traefik IngressRoute
 
-Creates a Traefik IngressRoute (not standard Ingress) with HTTPS via cert-manager. Supports extra middlewares on the default route, and additional, separate IngressRoute objects for the same backend Service via `extraIngressRoutes`:
+Creates one Traefik IngressRoute (not standard Ingress) per entry in `ingressRoutes`, with HTTPS
+via cert-manager.
+
 
 ```yaml
-ingress:
-  create: true
+certificate:
   issuer:
     name: letsencrypt-prod-issuer
-  defaultRoute:
+
+ingressRoutes:
+  - name: "{{ include \"service.name\" . }}"
+    match: "Host(`{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}`)"
+    homepage: true
     externalDns:
       enabled: true
-    extraMiddlewares:
+    middlewares:
+      - name: https-redirectscheme
+        namespace: traefik
       - name: keycloak-openid
         namespace: traefik
 ```
 
-#### TLS certificate modes (`ingress.tls.mode`)
+A second entry is just another list item — its own `match`, its own `middlewares`, optionally its
+own `certificateHostname`:
 
-- **`wildcard`** (default) — no per-app `Certificate` is created. The IngressRoute's TLS is left
-  empty (`tls: {}`), so it falls back to the cluster's Traefik `TLSStore` default certificate — a
-  single wildcard cert covering every app on that cluster. `extraIngressRoutes` entries that set
-  `certificateHostname` still get a `Certificate` of their own (for hostnames outside the
-  cluster's own domain, e.g. `auth.example.com`, or outside whichever tier's wildcard covers
-  them), and that IngressRoute's `tls.secretName` is set accordingly — the default route's
-  hostname still falls back to the TLSStore default via SNI.
-- **`perHost`** — the pre-wildcard-cert behavior: every app gets its own `Certificate`, and
-  `tls.secretName` on the IngressRoute always points to it. Set this per-cluster until that
-  cluster's Traefik has a `TLSStore` default certificate configured.
+```yaml
+ingressRoutes:
+  - name: "{{ include \"service.name\" . }}"
+    match: "Host(`{{ include \"service.name\" . }}.{{ include \"cluster.fqdn\" . }}`)"
+    homepage: true
+    externalDns:
+      enabled: true
+    middlewares:
+      - name: https-redirectscheme
+        namespace: traefik
+  - name: "{{ include \"service.name\" . }}-external"
+    labels:
+      exposure: external
+    match: "Host(`service.k3s.example.com`)"
+    certificateHostname: "service.k3s.example.com"
+    middlewares:
+      - name: middleware-name
+        namespace: traefik
+```
+
+#### TLS certificate modes (`certificate.tls.mode`)
+
+- **`wildcard`** (default) - The IngressRoute's TLS is left empty (`tls: {}`), so it falls back
+  to the cluster's Traefik `TLSStore` default certificate. `ingressRoutes` entries that set
+  `certificateHostname` still get a `Certificate` of their own.
+- **`perHost`** - get a dedicated `Certificate`, and `tls.secretName` on the IngressRoute
+  that always points to it.
 
 ### Vault secrets
 

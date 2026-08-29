@@ -54,3 +54,10 @@ tests:
       - equal:
           path: metadata.labels["app.kubernetes.io/managed-by"]
           value: Helm
+
+  - it: should not create a Service when disabled
+    set:
+      service.create: false
+    asserts:
+      - hasDocuments:
+          count: 0

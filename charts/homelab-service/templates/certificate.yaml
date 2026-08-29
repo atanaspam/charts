@@ -1,0 +1,30 @@
+{{- $wildcardMode := eq .Values.certificate.tls.mode "wildcard" }}
+{{- $extraCertHosts := list }}
+{{- range .Values.ingressRoutes }}
+  {{- if .certificateHostname }}
+    {{- $extraCertHosts = append $extraCertHosts (tpl .certificateHostname $) }}
+  {{- end }}
+{{- end }}
+{{- $anyCertNeeded := or (not $wildcardMode) (gt (len $extraCertHosts) 0) }}
+
+{{- if (and .Values.certificate.issuer $anyCertNeeded) }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "service.name" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  secretName: {{ include "service.name" . }}-cert
+  issuerRef:
+    name: {{ .Values.certificate.issuer.name }}
+    kind: ClusterIssuer
+  additionalOutputFormats:
+  - type: CombinedPEM
+  dnsNames:
+  {{- if not $wildcardMode }}
+  - {{  printf "%s.%s" (include "service.name" .) (include "cluster.fqdn" .) }}
+  {{- end }}
+  {{- range $extraCertHosts }}
+  - {{ . }}
+  {{- end }}
+{{- end }}
