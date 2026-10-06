@@ -182,6 +182,13 @@ homepage:
   group: services
   weight: "10"
 
+autoUpdate:
+  enabled: false
+  # keel.sh/policy: none|all|major|minor|patch|force - https://github.com/keel-hq/keel
+  policy: minor
+  trigger: poll
+  pollSchedule: "@every 48h"
+
 monitoring:
   serviceMonitor:
     create: false
