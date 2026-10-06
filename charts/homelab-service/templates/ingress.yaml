@@ -17,7 +17,6 @@ metadata:
     {{- if ($routeItem.externalDns | default dict).enabled }}
     external-dns.alpha.kubernetes.io/target: {{ include "cluster.fqdn" $root }}
     {{- end }}
-    kubernetes.io/ingress.class: traefik
     {{- if and $routeItem.homepage $root.Values.homepage.enabled }}
       {{- include "ingress.homepageAnnotations" $root | nindent 4 }}
     {{- end }}
@@ -28,6 +27,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
+  ingressClassName: traefik
   entryPoints:
     - websecure
   routes:

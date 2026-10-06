@@ -22,9 +22,12 @@ spec:
       labels:
         app.kubernetes.io/component: backend
         {{- include "service.labels" $ | nindent 8 }}
-      {{- with .podAnnotations }}
+      {{- if or .podAnnotations $.Values.autoUpdate.enabled }}
       annotations:
+        {{- with .podAnnotations }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- include "service.autoUpdateAnnotations" $ | nindent 8 }}
       {{- end }}
     spec:
       {{- with .securityContext }}

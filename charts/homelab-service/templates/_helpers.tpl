@@ -69,6 +69,17 @@ The chart's own Service http-named port
 {{- end }}
 
 {{/*
+Keel (https://keel.sh) auto-update annotations for the pod template, rendered when autoUpdate.enabled is true.
+*/}}
+{{- define "service.autoUpdateAnnotations" -}}
+{{- if .Values.autoUpdate.enabled -}}
+keel.sh/policy: {{ .Values.autoUpdate.policy }}
+keel.sh/trigger: {{ .Values.autoUpdate.trigger }}
+keel.sh/pollSchedule: {{ .Values.autoUpdate.pollSchedule | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
 Renders a complete tree, even values that contains template.
 */}}
 {{- define "service.render" -}}
