@@ -89,3 +89,19 @@ Renders a complete tree, even values that contains template.
     {{- tpl (.value | toYaml) .context }}
   {{- end }}
 {{- end -}}
+
+{{/*
+Renders the opentelemetry discovery annotations
+*/}}
+{{- define "service.annotationDiscoveryAnnotations" -}}
+{{- if .Values.monitoring.annotationDiscovery.create -}}
+{{- $port := .Values.monitoring.annotationDiscovery.port -}}
+io.opentelemetry.discovery.metrics.{{ $port }}/enabled: "true"
+io.opentelemetry.discovery.metrics.{{ $port }}/scraper: prometheus_simple
+io.opentelemetry.discovery.metrics.{{ $port }}/config: |
+  endpoint: "`endpoint`"
+  metrics_path: "/metrics"
+  collection_interval: {{ .Values.monitoring.annotationDiscovery.interval | quote }}
+  timeout: {{ .Values.monitoring.annotationDiscovery.scrapeTimeout | quote }}
+{{- end }}
+{{- end }}
