@@ -62,7 +62,7 @@ tests:
     documentIndex: 0
     asserts:
       - equal:
-          path: metadata.annotations["external-dns.alpha.kubernetes.io/target"]
+          path: metadata.annotations["external-dns.kubernetes.io/target"]
           value: k3s.internal.example.com
 
   - it: should set homepage annotations
@@ -92,7 +92,7 @@ tests:
     documentIndex: 0
     asserts:
       - notExists:
-          path: metadata.annotations["external-dns.alpha.kubernetes.io/target"]
+          path: metadata.annotations["external-dns.kubernetes.io/target"]
 
   - it: should not set homepage annotations when not requested on the route
     set:
@@ -195,22 +195,22 @@ tests:
         - name: it-tools
           match: "Host(`it-tools.example.com`)"
           backendService:
-            name: gsw130-k3s1-origin
+            name: example_site-k3s1-origin
             namespace: egress
             port: 443
             scheme: https
-            serversTransport: gsw130-k3s1-origin
+            serversTransport: example_site-k3s1-origin
     asserts:
       - equal:
           path: spec.routes[0].services[0]
           value:
             kind: Service
-            name: gsw130-k3s1-origin
+            name: example_site-k3s1-origin
             namespace: egress
             passHostHeader: true
             port: 443
             scheme: https
-            serversTransport: gsw130-k3s1-origin
+            serversTransport: example_site-k3s1-origin
 
   # dual exposure — a separate IngressRoute object per entry (not bundled into one), since each
   # Traefik instance's labelSelector scopes per-object.
