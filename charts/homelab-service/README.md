@@ -16,6 +16,7 @@ An opinionated Helm chart for deploying relatively simple applications (Deployme
 | [External Secrets Operator](https://external-secrets.io/) | ExternalSecret resources (`externalSecrets`) |
 | [CloudNativePG](https://cloudnative-pg.io/) | Database resources (`databases`) |
 | [Prometheus Operator](https://prometheus-operator.dev/) | ServiceMonitor resources (`monitoring.serviceMonitor`) |
+| [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) | Discovery-hint annotations (`monitoring.annotationDiscovery`) |
 | [external-dns](https://github.com/kubernetes-sigs/external-dns) | Automatic DNS records (`ingressRoutes[].externalDns`) |
 | [Homepage](https://gethomepage.dev/) | Dashboard integration (`homepage`) |
 
@@ -157,7 +158,9 @@ databases:
 
 ### Monitoring
 
-**ServiceMonitor** for Prometheus Operator:
+Configure automatic monitoring scraping
+
+**ServiceMonitor**
 
 ```yaml
 monitoring:
@@ -165,6 +168,17 @@ monitoring:
     create: true
     port: monitoring
     interval: 1m
+    scrapeTimeout: 10s
+```
+
+**OTel Collector discovery-hint annotations**
+
+```yaml
+monitoring:
+  annotationDiscovery:
+    create: true
+    port: 9707
+    interval: 30s
     scrapeTimeout: 10s
 ```
 

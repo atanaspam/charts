@@ -195,6 +195,11 @@ monitoring:
     port: monitoring
     interval: 1m
     scrapeTimeout: 10s
+  annotationDiscovery:
+    create: false
+    port: 9707
+    interval: 30s
+    scrapeTimeout: 10s
   exportarr:
     create: false
     version: latest
