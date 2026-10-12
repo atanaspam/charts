@@ -86,53 +86,81 @@ spec:
           lifecycle:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+        {{- range .sidecars }}
+        {{- if not .native }}
+        {{- include "service.sidecarContainer" (dict "sidecar" . "root" $) | nindent 8 }}
+        {{- end }}
+        {{- end }}
       volumes:
         {{- tpl ($.Values.volumes | toYaml) $ | nindent 8 }}
-      {{- if or (.initContainers) ($.Values.monitoring.exportarr.create) }}
+      {{- $nativeSidecars := list }}
+      {{- range .sidecars }}{{- if .native }}{{- $nativeSidecars = append $nativeSidecars . }}{{- end }}{{- end }}
+      {{- if or (.initContainers) $nativeSidecars }}
       initContainers:
-      {{- with .initContainers }}
-      {{- toYaml . | nindent 8 }}
-      {{- end }}
-        {{- if $.Values.monitoring.exportarr.create }}
-        - name: {{ include "service.name" $ }}-exporter
-          image: ghcr.io/onedr0p/exportarr:{{ $.Values.monitoring.exportarr.version | default "latest" }}
-          imagePullPolicy: IfNotPresent
-          restartPolicy: Always
-          args:
-            - {{ include "service.name" $ }}
-          env:
-            - name: PORT
-              value: "9707"
-            - name: URL
-              value: "http://{{ include "service.name" $ }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ (index .container.ports 0).containerPort }}"
-            - name: APIKEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "service.name" $ }}
-                  key: {{ $.Values.monitoring.exportarr.apiKeySecretName}}
-          ports:
-            - name: monitoring
-              containerPort: 9707
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: monitoring
-            failureThreshold: 5
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /healthz
-              port: monitoring
-            failureThreshold: 5
-            periodSeconds: 10
-          resources:
-            requests:
-              cpu: 100m
-              memory: 64Mi
-            limits:
-              cpu: 500m
-              memory: 256Mi
+        {{- with .initContainers }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- range $nativeSidecars }}
+        {{- include "service.sidecarContainer" (dict "sidecar" . "root" $) | nindent 8 }}
         {{- end }}
       {{- end }}
 {{- end }}
+{{- end }}
+
+{{/*
+Renders one entry from deployment.sidecars[] as a full container body
+*/}}
+{{- define "service.sidecarContainer" -}}
+{{- $sidecar := .sidecar -}}
+{{- $root := .root -}}
+- name: {{ tpl $sidecar.name $root }}
+  image: {{ $sidecar.image }}
+  imagePullPolicy: {{ $sidecar.imagePullPolicy | default "IfNotPresent" }}
+  {{- if $sidecar.native }}
+  restartPolicy: Always
+  {{- end }}
+  {{- with $sidecar.securityContext }}
+  securityContext:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with $sidecar.ports }}
+  ports:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with $sidecar.startupProbe }}
+  startupProbe:
+    {{- tpl (. | toYaml) $root | nindent 4 }}
+  {{- end }}
+  {{- with $sidecar.livenessProbe }}
+  livenessProbe:
+    {{- tpl (. | toYaml) $root | nindent 4 }}
+  {{- end }}
+  {{- with $sidecar.readinessProbe }}
+  readinessProbe:
+    {{- tpl (. | toYaml) $root | nindent 4 }}
+  {{- end }}
+  {{- with $sidecar.resources }}
+  resources:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with $sidecar.volumeMounts }}
+  volumeMounts:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with $sidecar.env }}
+  env:
+    {{- tpl (. | toYaml) $root | nindent 4 }}
+  {{- end }}
+  {{- if $sidecar.command }}
+  command:
+    {{- toYaml $sidecar.command | nindent 4 }}
+  {{- end }}
+  {{- if $sidecar.args }}
+  args:
+    {{- toYaml $sidecar.args | nindent 4 }}
+  {{- end }}
+  {{- with $sidecar.lifecycle }}
+  lifecycle:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 {{- end }}

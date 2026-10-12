@@ -11,14 +11,8 @@ spec:
   selector:
     app.kubernetes.io/name: {{ tpl .Values.deployment.name . }}
     app.kubernetes.io/instance: {{ $.Release.Name }}
-  {{- if or (.Values.service.ports) (.Values.monitoring.exportarr.create) }}
+  {{- with .Values.service.ports }}
   ports:
-    {{- with .Values.service.ports }}
     {{- toYaml . | nindent 4 }}
-    {{- end }}
-    {{- if .Values.monitoring.exportarr.create }}
-    - name: monitoring
-      port: 9707
-    {{- end }}
   {{- end }}
 {{- end }}
