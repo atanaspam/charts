@@ -216,3 +216,105 @@ tests:
     asserts:
       - hasDocuments:
           count: 0
+
+  - it: should not add any sidecar container by default
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 1
+      - notExists:
+          path: spec.template.spec.initContainers
+
+  - it: should add a classic sidecar (native false/omitted) as a second entry in containers
+    set:
+      deployment.sidecars:
+        - name: helper
+          image: busybox
+          ports:
+            - name: monitoring
+              containerPort: 9707
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 2
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: helper
+      - equal:
+          path: spec.template.spec.containers[1].ports[0].containerPort
+          value: 9707
+      - notExists:
+          path: spec.template.spec.containers[1].restartPolicy
+      - notExists:
+          path: spec.template.spec.initContainers
+
+  - it: should add a native sidecar (native true) to initContainers with restartPolicy Always, not to containers
+    set:
+      deployment.sidecars:
+        - name: helper
+          native: true
+          image: busybox
+          ports:
+            - name: monitoring
+              containerPort: 9707
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 1
+      - lengthEqual:
+          path: spec.template.spec.initContainers
+          count: 1
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: helper
+      - equal:
+          path: spec.template.spec.initContainers[0].restartPolicy
+          value: Always
+      - equal:
+          path: spec.template.spec.initContainers[0].ports[0].containerPort
+          value: 9707
+
+  - it: should render both a classic and a native sidecar together, each in the right place
+    set:
+      deployment.sidecars:
+        - name: classic-helper
+          image: busybox
+        - name: native-helper
+          native: true
+          image: busybox
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 2
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: classic-helper
+      - lengthEqual:
+          path: spec.template.spec.initContainers
+          count: 1
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: native-helper
+
+  - it: should still support custom initContainers independently of native sidecars
+    set:
+      deployment.initContainers:
+        - name: wait-for-it
+          image: busybox
+      deployment.sidecars:
+        - name: helper
+          native: true
+          image: busybox
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.initContainers
+          count: 2
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-it
+      - equal:
+          path: spec.template.spec.initContainers[1].name
+          value: helper
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 1

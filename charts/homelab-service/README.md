@@ -182,15 +182,23 @@ monitoring:
     scrapeTimeout: 10s
 ```
 
-**Exportarr sidecar** for *arr-stack applications (Sonarr, Radarr, etc.) — injects a sidecar container exposing Prometheus metrics on port 9707:
+**Sidecar containers** (`deployment.sidecars`)
 
 ```yaml
-monitoring:
-  exportarr:
-    create: true
-    version: v2.0.1
-    apiKeySecretName: "api_key"
+deployment:
+  sidecars:
+    - name: "{{ include \"service.name\" . }}-sidecar"
+      image: ghcr.io/org/my-app:latest
+      args:
+        - radarr
+      livenessProbe:
+        failureThreshold: 5
+        periodSeconds: 10
 ```
+
+By default a sidecar is a **classic sidecar** (a second entry in `containers:`). Set
+`native: true` to make it a Kubernetes **native sidecar** instead (`initContainers:` +
+`restartPolicy: Always`, added automatically)
 
 ### Homepage dashboard integration
 
