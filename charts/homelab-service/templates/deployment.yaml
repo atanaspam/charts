@@ -7,6 +7,10 @@ metadata:
   namespace: {{ $.Release.Namespace }}
   labels:
     {{- include "service.labels" $ | nindent 4 }}
+  {{- if $.Values.autoUpdate.enabled }}
+  annotations:
+    {{- include "service.autoUpdateAnnotations" $ | nindent 4 }}
+  {{- end }}
 spec:
   selector:
     matchLabels:
@@ -22,12 +26,11 @@ spec:
       labels:
         app.kubernetes.io/component: backend
         {{- include "service.labels" $ | nindent 8 }}
-      {{- if or .podAnnotations $.Values.autoUpdate.enabled $.Values.monitoring.annotationDiscovery.create }}
+      {{- if or .podAnnotations $.Values.monitoring.annotationDiscovery.create }}
       annotations:
         {{- with .podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- include "service.autoUpdateAnnotations" $ | nindent 8 }}
         {{- include "service.annotationDiscoveryAnnotations" $ | nindent 8 }}
       {{- end }}
     spec:
