@@ -69,7 +69,7 @@ The chart's own Service http-named port
 {{- end }}
 
 {{/*
-Keel (https://keel.sh) auto-update annotations for the Deployment's own metadata (Keel ignores the pod template), rendered when autoUpdate.enabled is true.
+Keel (https://keel.sh) auto-update annotations for the Deployment's own metadata.
 */}}
 {{- define "service.autoUpdateAnnotations" -}}
 {{- if .Values.autoUpdate.enabled -}}
