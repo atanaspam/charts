@@ -318,3 +318,30 @@ tests:
       - lengthEqual:
           path: spec.template.spec.containers
           count: 1
+
+  - it: should not set keel annotations by default
+    asserts:
+      - notExists:
+          path: metadata.annotations
+      - notExists:
+          path: spec.template.metadata.annotations["keel.sh/policy"]
+
+  - it: should set keel annotations on the Deployment metadata, not the pod template, when autoUpdate is enabled
+    set:
+      autoUpdate:
+        enabled: true
+        policy: minor
+        trigger: poll
+        pollSchedule: "@every 48h"
+    asserts:
+      - equal:
+          path: metadata.annotations["keel.sh/policy"]
+          value: minor
+      - equal:
+          path: metadata.annotations["keel.sh/trigger"]
+          value: poll
+      - equal:
+          path: metadata.annotations["keel.sh/pollSchedule"]
+          value: "@every 48h"
+      - notExists:
+          path: spec.template.metadata.annotations["keel.sh/policy"]
