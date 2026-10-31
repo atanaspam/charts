@@ -39,11 +39,6 @@ deployment:
         value: "5000"
       - name: PGID
         value: "5000"
-      - name: TZ
-        valueFrom:
-          secretKeyRef:
-            name: "{{ $.Release.Name }}"
-            key: TZ
     startupProbe:
       httpGet:
         path: /
