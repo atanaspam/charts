@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -30,7 +30,7 @@ jobs:
         run: |
           MSG=$(git log -1 --pretty=%s)
           TYPE=$(echo "$MSG" | sed -n 's/^\([a-z]*\).*/\1/p')
-          if [[ "$TYPE" == "feat" || "$TYPE" == "fix" || "$TYPE" == "perf" ]]; then
+          if [[ "$TYPE" == "feat" || "$TYPE" == "fix" || "$TYPE" == "chore" ]]; then
             echo "should_release=true" >> $GITHUB_OUTPUT
           else
             echo "should_release=false" >> $GITHUB_OUTPUT
@@ -39,7 +39,7 @@ jobs:
       - name: Get next version
         if: steps.commit.outputs.should_release == 'true'
         id: version
-        uses: paulhatch/semantic-version@v5.4.0
+        uses: paulhatch/semantic-version@v6.0.2
         with:
           tag_prefix: "homelab-service-"
           major_pattern: "/!:|BREAKING CHANGE:/"
@@ -60,7 +60,7 @@ jobs:
 
       - name: Install Helm
         if: steps.commit.outputs.should_release == 'true'
-        uses: azure/setup-helm@v4
+        uses: azure/setup-helm@v5
 
       - name: Run chart-releaser
         if: steps.commit.outputs.should_release == 'true'
